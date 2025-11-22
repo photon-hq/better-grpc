@@ -1,5 +1,5 @@
 import { createGrpcServer } from "../runtime/grpc-server";
-import type { ClientFn, client, ServerFn, server } from "./rpc-signatures";
+import { type ClientFn, type clientSignature, type ServerFn, type serverSignature, bidi, server } from "./rpc-signatures";
 
 export declare const ServiceNameTag: unique symbol;
 
@@ -25,21 +25,21 @@ export class ServiceImpl<T extends AbstractServiceClass, Type extends "server" |
 export function Service<N extends string>(name: N) {
     abstract class BaseService {
         static serviceName = name;
-        
+
         static Server<T extends AbstractServiceClass, Impl extends ServerFn<InstanceType<T>>>(
             this: T,
             implementation: Impl,
         ): ServiceImpl<T, "server"> {
             return new ServiceImpl<T, "server">(implementation, "server", name);
         }
-        
+
         static Client<T extends AbstractServiceClass, Impl extends ClientFn<InstanceType<T>>>(
             this: T,
             implementation: Impl,
         ): ServiceImpl<T, "client"> {
             return new ServiceImpl<T, "client">(implementation, "client", name);
         }
-        
+
         declare readonly [ServiceNameTag]: N;
     }
     return BaseService;
