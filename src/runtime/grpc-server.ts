@@ -1,11 +1,14 @@
 import type { ServiceCallable, ServiceImpl, ServiceNameOf } from "../core/service";
+import { GrpcServer } from "./server";
 
 export async function createGrpcServer<T extends ServiceImpl<any, "server">[]>(
     port: number,
     ...serviceImpls: T
 ): Promise<{ [I in T[number] as ServiceNameOf<I>]: ServiceCallable<I> }> {
-    // const grpcServerInstance = createGrpcServerInstance(`0.0.0.0:${port}`);
+    const grpcServerInstance = new GrpcServer(`0.0.0.0:${port}`, serviceImpls);
+    
+    await grpcServerInstance.start();
 
     // Implementation placeholder
-    return {} as any;
+    return grpcServerInstance as any;
 }
