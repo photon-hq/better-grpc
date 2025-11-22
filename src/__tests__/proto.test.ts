@@ -3,8 +3,9 @@ import { client, server, type clientSignature, type serverSignature } from "../c
 import { createGrpcClient } from "../runtime/grpc-client";
 import { createGrpcServer } from "../runtime/grpc-server";
 import { Service } from "../core/service";
+import { buildProtoString } from "../runtime/proto-builder";
 
-describe("unary test", async () => {
+describe("proto generation test", async () => {
     abstract class UnaryTestService extends Service("UnaryTestService"){
         clientFn1 = client<() => number>();
         serverFn1 = server<() => number>();
@@ -21,9 +22,12 @@ describe("unary test", async () => {
             return 2;
         }
     })
-
-    const grpcServer = await createGrpcServer(50001, UnaryServerImpl);
-    const grpcClient = await createGrpcClient("0.0.0.0:50001", UnaryClientImpl);
-
-    grpcServer.UnaryTestService.clientFn1();
+    
+    console.log(buildProtoString(UnaryServerImpl))
+    
+    test("server and client proto idiomatic", () => {
+        expect(buildProtoString(UnaryServerImpl)).toEqual(buildProtoString(UnaryClientImpl));
+    });
+    
+    // grpcServer.UnaryTestService.clientFn1();
 });

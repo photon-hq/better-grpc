@@ -8,19 +8,19 @@ export type bidiSignature<fn extends AnyFn<void>> = fn & { [ScopeTag]: "bidi" };
 
 export function server<fn extends AnyFn<any>>(): serverSignature<(...args: Parameters<fn>) => Promise<ReturnType<fn>>> {
     return {
-        [ScopeTag]: "server",
+        type: "server",
     } as any;
 }
 
 export function client<fn extends AnyFn<any>>(): clientSignature<(...args: Parameters<fn>) => Promise<ReturnType<fn>>> {
     return {
-        [ScopeTag]: "client",
+        type: "client",
     } as any;
 }
 
 export function bidi<fn extends AnyFn<void>>(): bidiSignature<(...args: Parameters<fn>) => Promise<ReturnType<fn>>> {
     return {
-        [ScopeTag]: "bidi",
+        type: "bidi",
     } as any;
 }
 

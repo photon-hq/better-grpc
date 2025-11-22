@@ -1,5 +1,12 @@
 import { createGrpcServer } from "../runtime/grpc-server";
-import { type ClientFn, type clientSignature, type ServerFn, type serverSignature, bidi, server } from "./rpc-signatures";
+import {
+    bidi,
+    type ClientFn,
+    type clientSignature,
+    type ServerFn,
+    server,
+    type serverSignature,
+} from "./rpc-signatures";
 
 export declare const ServiceNameTag: unique symbol;
 
@@ -12,12 +19,12 @@ export type AbstractServiceClass<N extends string = string> = abstract new (...a
 export class ServiceImpl<T extends AbstractServiceClass, Type extends "server" | "client"> {
     readonly implementation: any;
     readonly type: Type;
-    readonly serviceName: string;
+    readonly serviceClass: T;
 
-    constructor(implementation: any, type: Type, serviceName: string) {
+    constructor(implementation: any, type: Type, serviceClass: T) {
         this.implementation = implementation;
         this.type = type;
-        this.serviceName = serviceName;
+        this.serviceClass = serviceClass;
     }
 }
 
@@ -30,14 +37,16 @@ export function Service<N extends string>(name: N) {
             this: T,
             implementation: Impl,
         ): ServiceImpl<T, "server"> {
-            return new ServiceImpl<T, "server">(implementation, "server", name);
+            // biome-ignore lint/complexity/noThisInStatic: Required for static method to access class constructor
+            return new ServiceImpl<T, "server">(implementation, "server", this);
         }
 
         static Client<T extends AbstractServiceClass, Impl extends ClientFn<InstanceType<T>>>(
             this: T,
             implementation: Impl,
         ): ServiceImpl<T, "client"> {
-            return new ServiceImpl<T, "client">(implementation, "client", name);
+            // biome-ignore lint/complexity/noThisInStatic: Required for static method to access class constructor
+            return new ServiceImpl<T, "client">(implementation, "client", this);
         }
 
         declare readonly [ServiceNameTag]: N;
