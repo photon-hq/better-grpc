@@ -7,20 +7,31 @@ export type clientSignature<fn extends AnyFn<any>> = fn & { [ScopeTag]: "client"
 export type bidiSignature<fn extends AnyFn<void>> = fn & { [ScopeTag]: "bidi" };
 
 export function server<fn extends AnyFn<any>>(): serverSignature<(...args: Parameters<fn>) => Promise<ReturnType<fn>>> {
-    return null as any
+    return {
+        [ScopeTag]: "server",
+    } as any;
 }
 
 export function client<fn extends AnyFn<any>>(): clientSignature<(...args: Parameters<fn>) => Promise<ReturnType<fn>>> {
-    return null as any
+    return {
+        [ScopeTag]: "client",
+    } as any;
 }
 
 export function bidi<fn extends AnyFn<void>>(): bidiSignature<(...args: Parameters<fn>) => Promise<ReturnType<fn>>> {
-    return null as any
+    return {
+        [ScopeTag]: "bidi",
+    } as any;
 }
 
-
 // Helper type to extract the raw function from any tagged type
-type Unwrap<T> = T extends serverSignature<infer F> ? F : T extends clientSignature<infer F> ? F : T extends bidiSignature<infer F> ? F : never;
+type Unwrap<T> = T extends serverSignature<infer F>
+    ? F
+    : T extends clientSignature<infer F>
+      ? F
+      : T extends bidiSignature<infer F>
+        ? F
+        : never;
 
 export type ServerFn<T> = {
     // 1. Filter keys: Keep only server or bidi
