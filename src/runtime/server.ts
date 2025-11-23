@@ -3,6 +3,7 @@ import { createServer } from "nice-grpc";
 import type { ServiceImpl } from "../core/service";
 import { loadProtoFromString } from "../utils/proto-loader";
 import { buildProtoString } from "./proto-builder";
+import { createServiceImpl } from "./service-impl";
 
 export class GrpcServer {
     readonly address: string;
@@ -18,7 +19,7 @@ export class GrpcServer {
 
     async start() {
         for (const serviceImpl of this.serviceImpls) {
-            this.grpcServer.add(this.proto[serviceImpl.serviceClass.serviceName] as any, {});
+            this.grpcServer.add(this.proto[serviceImpl.serviceClass.serviceName] as any, createServiceImpl(serviceImpl));
         }
 
         await this.grpcServer.listen(this.address);

@@ -1,12 +1,4 @@
-import { createGrpcServer } from "../runtime/grpc-server";
-import {
-    bidi,
-    type ClientFn,
-    type clientSignature,
-    type ServerFn,
-    server,
-    type serverSignature,
-} from "./rpc-signatures";
+import type { ClientFn, RpcMethodDescriptor, ServerFn } from "./rpc-signatures";
 
 export declare const ServiceNameTag: unique symbol;
 
@@ -25,6 +17,19 @@ export class ServiceImpl<T extends AbstractServiceClass, Type extends "server" |
         this.implementation = implementation;
         this.type = type;
         this.serviceClass = serviceClass;
+    }
+    
+    methodDescriptor(name: string): RpcMethodDescriptor {
+        const definition = Reflect.construct(this.serviceClass, []);
+        const fields = Object.entries(definition);
+        
+        for (const [key, value] of fields) {
+            if (key === name) {
+                return value as unknown as RpcMethodDescriptor;
+            }
+        }
+        
+        throw new Error(`Method ${name} not found in service definition`);
     }
 }
 

@@ -6,22 +6,30 @@ export type serverSignature<fn extends AnyFn<any>> = fn & { [ScopeTag]: "server"
 export type clientSignature<fn extends AnyFn<any>> = fn & { [ScopeTag]: "client" };
 export type bidiSignature<fn extends AnyFn<void>> = fn & { [ScopeTag]: "bidi" };
 
+export type RpcMethodDescriptor = {
+    serviceType: "server" | "client" | "bidi",
+    methodType: "unary" | "bidi",
+}
+
 export function server<fn extends AnyFn<any>>(): serverSignature<(...args: Parameters<fn>) => Promise<ReturnType<fn>>> {
     return {
-        type: "server",
-    } as any;
+        serviceType: "server",
+        methodType: "unary",
+    } as RpcMethodDescriptor as any;
 }
 
 export function client<fn extends AnyFn<any>>(): clientSignature<(...args: Parameters<fn>) => Promise<ReturnType<fn>>> {
     return {
-        type: "client",
-    } as any;
+        serviceType: "client",
+        methodType: "unary",
+    } as RpcMethodDescriptor as any;
 }
 
 export function bidi<fn extends AnyFn<void>>(): bidiSignature<(...args: Parameters<fn>) => Promise<ReturnType<fn>>> {
     return {
-        type: "bidi",
-    } as any;
+        serviceType: "bidi",
+        methodType: "bidi",
+    } as RpcMethodDescriptor as any;
 }
 
 // Helper type to extract the raw function from any tagged type

@@ -6,7 +6,7 @@ syntax = "proto3";
 
 import "google/protobuf/struct.proto";
 
-${services.map(s => buildServiceProto(s)).join("\n\n")}
+${services.map((s) => buildServiceProto(s)).join("\n\n")}
 
 message BetterGrpcMessage {
     optional string id = 1;
@@ -23,18 +23,22 @@ export function buildServiceProto<T extends ServiceImpl<any, any>>(base: T) {
     let methods = "";
 
     for (const [name, value] of fields) {
-        switch ((value as any).type) {
-            case "server":
+        const serviceType = (value as any).serviceType;
+        const methodType = (value as any).methodType;
+        const key = `${serviceType}:${methodType}`;
+
+        switch (key) {
+            case "server:unary":
                 methods += `rpc ${name.toUpperCase()}(stream BetterGrpcMessage) returns (stream BetterGrpcMessage);`;
                 break;
-            case "client":
+            case "client:unary":
                 methods += `rpc ${name.toUpperCase()}(BetterGrpcMessage) returns (BetterGrpcMessage);`;
                 break;
-            case "bidi":
+            case "bidi:bidi":
                 methods += `rpc ${name.toUpperCase()}(stream BetterGrpcMessage) returns (stream BetterGrpcMessage);`;
                 break;
             default:
-                throw new Error(`Unsupported type: ${(value as any).type}`);
+                throw new Error(`Unsupported type: ${serviceType} ${methodType}`);
         }
         methods += "\n\n    ";
     }

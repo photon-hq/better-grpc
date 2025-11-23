@@ -2,8 +2,6 @@ import { describe, expect, test } from "bun:test";
 import type { GrpcObject, ServiceClientConstructor, ServiceDefinition } from "@grpc/grpc-js";
 import { client, type clientSignature, server, type serverSignature } from "../core/rpc-signatures";
 import { Service } from "../core/service";
-import { createGrpcClient } from "../runtime/grpc-client";
-import { createGrpcServer } from "../runtime/grpc-server";
 import { buildProtoString, buildServiceProto } from "../runtime/proto-builder";
 import { loadProtoFromString } from "../utils/proto-loader";
 
@@ -56,9 +54,6 @@ describe("proto generation test", async () => {
             return 2;
         },
     });
-
-    console.log(buildProtoString([UnaryServerImpl]));
-    console.log(loadProtoFromString(buildProtoString([UnaryServerImpl])));
 
     test("server and client service proto idiomatic", () => {
         expect(buildServiceProto(UnaryServerImpl)).toEqual(buildServiceProto(UnaryClientImpl));
