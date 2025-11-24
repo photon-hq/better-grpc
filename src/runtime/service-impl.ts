@@ -1,4 +1,6 @@
+import { pushable } from "it-pushable";
 import type { ServiceImpl } from "../core/service";
+import type { GrpcServer } from "./server";
 
 function createUnaryHandler(handler: (...args: any[]) => Promise<any>) {
     return async (req: any) => {
@@ -9,19 +11,19 @@ function createUnaryHandler(handler: (...args: any[]) => Promise<any>) {
     };
 }
 
-function createBidiStreamHandler(handler: (...args: any[]) => Promise<any>) {
-    return async function* (req: any) {};
-}
-
-export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">) {
+export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcServer: GrpcServer) {
     const grpcImpl = {};
     
     for (const [name, descriptor] of Object.entries(serviceImpl.methods())) {
         switch (`${descriptor.serviceType}:${descriptor.methodType}`) {
             case "server:unary":
-                (grpcImpl as any)[name.toUpperCase()] = createBidiStreamHandler(async () => {
+                (grpcImpl as any)[name.toUpperCase()] = async function* () {
+                    const stream = pushable<any>({ objectMode: true });
                     
-                });
+                    (grpcServer.pushableStreams[serviceImpl.serviceClass.serviceName] as any)[name.toUpperCase()] = stream
+                    
+                    yield* stream
+                }
                 break;
             case "client:unary":                
                 (grpcImpl as any)[name.toUpperCase()] = createUnaryHandler(serviceImpl.implementation[name]);

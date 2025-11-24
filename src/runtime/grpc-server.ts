@@ -8,7 +8,8 @@ export async function createGrpcServer<T extends ServiceImpl<any, "server">[]>(
     const grpcServerInstance = new GrpcServer(`0.0.0.0:${port}`, serviceImpls);
     
     await grpcServerInstance.start();
+    
+    grpcServerInstance.bindFns()
 
-    // Implementation placeholder
     return grpcServerInstance as any;
 }
