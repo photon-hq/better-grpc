@@ -1,13 +1,14 @@
-import { toStruct } from "../utils/struct";
+import { decode, encode } from "@msgpack/msgpack";
 
-export function buildMessage(id: string | undefined, data: any[]) {
-    const mapData: Record<number, any> = {}
-    for (let i = 0; i < data.length; i++) {
-        mapData[i] = data[i];
-    }
-    
+export function encodeRequestMessage(id: string | undefined, value: any[]) {
     return {
         id,
-        value: toStruct(mapData)
-    }
+        value: encode(value),
+    };
+}
+
+export function decodeRequestMessage(message: any): [id: string | undefined, data: any[]] {
+    const id = message.id;
+    const mapData: any[] = message.value === undefined ? [] : decode(message.value) as any[];
+    return [id, mapData];
 }

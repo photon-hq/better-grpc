@@ -4,13 +4,11 @@ export function buildProtoString<T extends ServiceImpl<any, any>[]>(services: T)
     const proto = `
 syntax = "proto3";
 
-import "google/protobuf/struct.proto";
-
 ${services.map((s) => buildServiceProto(s)).join("\n\n")}
 
 message BetterGrpcMessage {
     optional string id = 1;
-    optional google.protobuf.Struct value = 2;
+    optional bytes value = 2;
 }`;
 
     return proto.trim();

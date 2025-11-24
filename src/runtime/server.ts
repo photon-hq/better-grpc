@@ -3,7 +3,7 @@ import type { Pushable } from "it-pushable";
 import { createServer } from "nice-grpc";
 import type { ServiceImpl } from "../core/service";
 import { loadProtoFromString } from "../utils/proto-loader";
-import { buildMessage } from "./message";
+import { encodeRequestMessage } from "./message";
 import { buildProtoString } from "./proto-builder";
 import { createServiceImpl } from "./service-impl";
 
@@ -52,7 +52,7 @@ export class GrpcServer {
                             const requestId = crypto.randomUUID();
                             return new Promise((resolve) => {
                                 this.pendingRequests.set(requestId, resolve);
-                                stream.push(buildMessage(requestId, args));
+                                stream.push(encodeRequestMessage(requestId, args));
                             });
                         };
                         break;

@@ -13,11 +13,6 @@ const PROTO_OPTIONS: ProtoLoaderOptions = {
 export function loadProtoFromString(source: string): GrpcObject {
     const bootstrapRoot = new Root();
 
-    const structJson = common.get("google/protobuf/struct.proto");
-    if (structJson?.nested) {
-        bootstrapRoot.addJSON(structJson.nested);
-    }
-
     const { root } = parse(source, bootstrapRoot);
     const packageDef = fromJSON(root.toJSON(), PROTO_OPTIONS);
     return loadPackageDefinition(packageDef);
