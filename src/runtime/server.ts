@@ -14,7 +14,6 @@ export class GrpcServer {
     constructor(address: string, serviceImpls: ServiceImpl<any, "server">[]) {
         this.address = address;
         this.serviceImpls = serviceImpls;
-        console.log(buildProtoString(serviceImpls))
         this.proto = loadProtoFromString(buildProtoString(serviceImpls));
     }
 

@@ -12,24 +12,22 @@ export class ServiceImpl<T extends AbstractServiceClass, Type extends "server" |
     readonly implementation: any;
     readonly type: Type;
     readonly serviceClass: T;
+    readonly serviceClassInstance: InstanceType<T>;
 
     constructor(implementation: any, type: Type, serviceClass: T) {
         this.implementation = implementation;
         this.type = type;
         this.serviceClass = serviceClass;
+        this.serviceClassInstance = Reflect.construct(this.serviceClass, []);
     }
     
-    methodDescriptor(name: string): RpcMethodDescriptor {
-        const definition = Reflect.construct(this.serviceClass, []);
-        const fields = Object.entries(definition);
+    methods(): Record<string, RpcMethodDescriptor> {
+        const fields = Object.entries(this.serviceClassInstance);
         
-        for (const [key, value] of fields) {
-            if (key === name) {
-                return value as unknown as RpcMethodDescriptor;
-            }
-        }
-        
-        throw new Error(`Method ${name} not found in service definition`);
+        return fields.reduce((acc, [name, descriptor]) => {
+            acc[name] = descriptor as RpcMethodDescriptor;
+            return acc;
+        }, {} as Record<string, RpcMethodDescriptor>);
     }
 }
 

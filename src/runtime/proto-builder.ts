@@ -17,14 +17,11 @@ message BetterGrpcMessage {
 }
 
 export function buildServiceProto<T extends ServiceImpl<any, any>>(base: T) {
-    const definition = Reflect.construct(base.serviceClass as new () => any, []);
-    const fields = Object.entries(definition);
-
     let methods = "";
 
-    for (const [name, value] of fields) {
-        const serviceType = (value as any).serviceType;
-        const methodType = (value as any).methodType;
+    for (const [name, value] of Object.entries(base.methods())) {
+        const serviceType = value.serviceType;
+        const methodType = value.methodType;
         const key = `${serviceType}:${methodType}`;
 
         switch (key) {

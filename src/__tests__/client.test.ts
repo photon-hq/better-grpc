@@ -23,8 +23,6 @@ describe("client side test", async () => {
         },
     });
     
-    console.log(createServiceImpl(UnaryServerImpl))
-    
     const grpcServer = await createGrpcServer(50001, UnaryServerImpl)
     const grpcClient = await createGrpcClient("0.0.0.0:50001", UnaryClientImpl)
     
