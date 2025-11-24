@@ -9,6 +9,10 @@ function createUnaryHandler(handler: (...args: any[]) => Promise<any>) {
     };
 }
 
+function createBidiStreamHandler(handler: (...args: any[]) => Promise<any>) {
+    return async function* (req: any) {};
+}
+
 export function createServiceImpl(serviceImpl: ServiceImpl<any, any>) {
     const grpcImpl = {};
 
@@ -16,9 +20,10 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, any>) {
         const methodDescriptor = serviceImpl.methodDescriptor(name);
         switch (`${methodDescriptor.serviceType}:${methodDescriptor.methodType}`) {
             case "server:unary":
+                (grpcImpl as any)[name.toUpperCase()] = createBidiStreamHandler(handler as any);
                 break;
             case "client:unary":
-                (grpcImpl as any)[name] = createUnaryHandler(handler as any);
+                (grpcImpl as any)[name.toUpperCase()] = createUnaryHandler(handler as any);
                 break;
             default:
                 throw new Error(`Unknown method descriptor: ${methodDescriptor}`);
