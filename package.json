@@ -34,10 +34,6 @@
         "promise",
         "trpc"
     ],
-    "devDependencies": {
-        "@types/bun": "latest",
-        "tsup": "^8.5.1"
-    },
     "scripts": {
         "dev": "tsup --watch",
         "build": "tsup",
@@ -51,6 +47,11 @@
         "test:coverage": "bun test --coverage",
         "prepublishOnly": "npm run lint && npm run type-check && npm run test && npm run build",
         "prepack": "npm run build"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "^2.3.7",
+        "@types/bun": "latest",
+        "tsup": "^8.5.1"
     },
     "peerDependencies": {
         "typescript": "^5"
