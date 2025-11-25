@@ -68,10 +68,8 @@ export class GrpcServer {
             const serviceCallableInstance = {};
 
             for (const [name, descriptor] of Object.entries(serviceImpl.methods())) {
-                switch (descriptor.serviceType) {
-                    case "server":
-                        break;
-                    case "client": // server calling client fn
+                switch (`${descriptor.serviceType}:${descriptor.methodType}`) {
+                    case "client:unary":
                         (serviceCallableInstance as any)[name] = async (...args: any[]) => {
                             const requestId = crypto.randomUUID();
                             return new Promise((resolve) => {
@@ -80,8 +78,6 @@ export class GrpcServer {
                                 stream.then((s) => s.push(encodeRequestMessage(requestId, args)));
                             });
                         };
-                        break;
-                    case "bidi":
                         break;
                 }
             }

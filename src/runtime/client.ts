@@ -3,7 +3,7 @@ import { pushable } from "it-pushable";
 import { type Channel, type ClientFactory, createChannel, createClientFactory } from "nice-grpc";
 import type { ServiceImpl } from "../core/service";
 import { loadProtoFromString } from "../utils/proto-loader";
-import { decodeRequestMessage, encodeResponseMessage } from "./message";
+import { decodeRequestMessage, decodeResponseMessage, encodeRequestMessage, encodeResponseMessage } from "./message";
 import { buildProtoString } from "./proto-builder";
 
 export class GrpcClient {
@@ -78,7 +78,32 @@ export class GrpcClient {
         }
     }
 
-    bindFns() {}
+    bindFns() {
+        for (const serviceImpl of this.serviceImpls) {
+            const serviceCallableInstance = {};
+
+            for (const [name, descriptor] of Object.entries(serviceImpl.methods())) {
+                switch (`${descriptor.serviceType}:${descriptor.methodType}`) {
+                    case "server:unary":
+                        (serviceCallableInstance as any)[name] = async (...args: any[]) => {
+                            const response = await this.clients
+                                .get(serviceImpl.serviceClass.serviceName)
+                                [name.toUpperCase()](encodeRequestMessage(undefined, args));
+                            const [_, value] = decodeResponseMessage(response);
+                            return value;
+                        };
+                        break;
+                }
+            }
+
+            Object.defineProperty(this, serviceImpl.serviceClass.serviceName, {
+                value: serviceCallableInstance,
+                writable: false,
+                enumerable: true,
+                configurable: false,
+            });
+        }
+    }
 
     async waitUntilReady(timeoutMs = 5000) {
         const channel = this.channel as grpc.Channel;
