@@ -89,7 +89,6 @@ export class GrpcClient {
                 const state = channel.getConnectivityState(true);
 
                 if (state === grpc.connectivityState.READY) {
-                    console.log("gRPC channel is ready");
                     resolve();
                     return;
                 }

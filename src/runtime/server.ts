@@ -15,6 +15,7 @@ export class GrpcServer {
 
     pushableStreams: Record<string, Record<string, Pushable<any>>> = {};
     pendingRequests = new Map<string, (value: any) => void>();
+    pendingStreams = new Map<string, (value: Pushable<any>) => void>();
 
     constructor(address: string, serviceImpls: ServiceImpl<any, "server">[]) {
         this.address = address;
@@ -34,10 +35,25 @@ export class GrpcServer {
         await this.grpcServer.listen(this.address);
     }
 
-    getStream(serviceName: string, methodName: string): Pushable<any> {
-        return (this.pushableStreams[serviceName] as any)[methodName.toUpperCase()];
+    setStream(serviceName: string, methodName: string, stream: Pushable<any>) {
+        (this.pushableStreams[serviceName] as any)[methodName.toUpperCase()] = stream;
+        if (this.pendingStreams.has(`${serviceName}.${methodName.toUpperCase()}`)) {
+            const resolve = this.pendingStreams.get(`${serviceName}.${methodName.toUpperCase()}`);
+            resolve?.(stream);
+            this.pendingStreams.delete(`${serviceName}.${methodName.toUpperCase()}`);
+        }
     }
-    
+
+    async getStream(serviceName: string, methodName: string): Promise<Pushable<any>> {
+        const stream = (this.pushableStreams[serviceName] as any)[methodName.toUpperCase()];
+        if (!stream) {
+            return new Promise((resolve) => {
+                this.pendingStreams.set(`${serviceName}.${methodName.toUpperCase()}`, resolve);
+            });
+        }
+        return stream;
+    }
+
     resolveResponse(id: string, value: any) {
         const resolve = this.pendingRequests.get(id);
         if (!resolve) {
@@ -57,11 +73,11 @@ export class GrpcServer {
                         break;
                     case "client": // server calling client fn
                         (serviceCallableInstance as any)[name] = async (...args: any[]) => {
-                            const stream = this.getStream(serviceImpl.serviceClass.serviceName, name.toUpperCase());
                             const requestId = crypto.randomUUID();
                             return new Promise((resolve) => {
+                                const stream = this.getStream(serviceImpl.serviceClass.serviceName, name.toUpperCase());
                                 this.pendingRequests.set(requestId, resolve);
-                                stream.push(encodeRequestMessage(requestId, args));
+                                stream.then((s) => s.push(encodeRequestMessage(requestId, args)));
                             });
                         };
                         break;

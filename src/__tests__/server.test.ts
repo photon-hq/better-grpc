@@ -10,6 +10,8 @@ describe("server side test", async () => {
         clientFn1 = client<() => number>();
         serverFn1 = server<() => number>();
     }
+    
+    let clientValue = 1
 
     const UnaryServerImpl = UnaryTestService.Server({
         serverFn1: async () => {
@@ -19,7 +21,8 @@ describe("server side test", async () => {
 
     const UnaryClientImpl = UnaryTestService.Client({
         clientFn1: async () => {
-            return 2;
+            clientValue += 1
+            return clientValue;
         },
     });
     
@@ -27,13 +30,10 @@ describe("server side test", async () => {
     const grpcServer = await createGrpcServer(50002, UnaryServerImpl);
     await createGrpcClient("0.0.0.0:50002", UnaryClientImpl);
     
-    const value = await grpcServer.UnaryTestService.clientFn1()
-    console.log('value:', value)
 
     test("unary without input", async () => {
-        // await grpcServer.UnaryTestService.clientFn1()
-        // expect(await grpcServer.UnaryTestService.clientFn1()).toBe(2);
+        expect(await grpcServer.UnaryTestService.clientFn1()).toBe(2);
+        expect(await grpcServer.UnaryTestService.clientFn1()).toBe(3);
+        expect(await grpcServer.UnaryTestService.clientFn1()).toBe(4);
     });
-    
-    await new Promise(() => {});
 });

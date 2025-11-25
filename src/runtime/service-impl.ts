@@ -25,8 +25,7 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
                 (grpcImpl as any)[name.toUpperCase()] = async function* (incomingStream: any) {
                     const stream = pushable<any>({ objectMode: true });
 
-                    (grpcServer.pushableStreams[serviceImpl.serviceClass.serviceName] as any)[name.toUpperCase()] =
-                        stream;
+                    grpcServer.setStream(serviceImpl.serviceClass.serviceName, name, stream)
                     
                     // listening for response
                     ;(async () => {
