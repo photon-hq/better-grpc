@@ -1,12 +1,56 @@
 {
     "name": "better-grpc",
-    "module": "src/index.ts",
+    "version": "0.1.0",
+    "description": "Simple, typed gRPC for TypeScript",
+    "author": "Photon AI",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/photon-hq/better-grpc.git"
+    },
+    "publishConfig": {
+        "registry": "https://registry.npmjs.org/",
+        "access": "public"
+    },
     "type": "module",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs"
+        }
+    },
+    "files": [
+        "dist",
+        "README.md",
+        "LICENSE"
+    ],
+    "keywords": [
+        "grpc",
+        "typescript",
+        "promise",
+        "trpc"
+    ],
     "devDependencies": {
-        "@types/bun": "latest"
+        "@types/bun": "latest",
+        "tsup": "^8.5.1"
     },
     "scripts": {
-        "test": "bun test"
+        "dev": "tsup --watch",
+        "build": "tsup",
+        "type-check": "tsc --noEmit",
+        "lint": "biome check .",
+        "lint:fix": "biome check --write .",
+        "format": "biome format --write .",
+        "test": "bun test",
+        "test:node": "node --test",
+        "test:watch": "bun test --watch",
+        "test:coverage": "bun test --coverage",
+        "prepublishOnly": "npm run lint && npm run type-check && npm run test && npm run build",
+        "prepack": "npm run build"
     },
     "peerDependencies": {
         "typescript": "^5"
@@ -16,5 +60,8 @@
         "it-pushable": "^3.2.3",
         "nice-grpc": "^2.1.13",
         "zod": "^4.1.12"
+    },
+    "engines": {
+        "node": ">=18.0.0"
     }
 }

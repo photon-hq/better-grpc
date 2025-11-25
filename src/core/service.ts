@@ -20,14 +20,17 @@ export class ServiceImpl<T extends AbstractServiceClass, Type extends "server" |
         this.serviceClass = serviceClass;
         this.serviceClassInstance = Reflect.construct(this.serviceClass, []);
     }
-    
+
     methods(): Record<string, RpcMethodDescriptor> {
         const fields = Object.entries(this.serviceClassInstance);
-        
-        return fields.reduce((acc, [name, descriptor]) => {
-            acc[name] = descriptor as RpcMethodDescriptor;
-            return acc;
-        }, {} as Record<string, RpcMethodDescriptor>);
+
+        return fields.reduce(
+            (acc, [name, descriptor]) => {
+                acc[name] = descriptor as RpcMethodDescriptor;
+                return acc;
+            },
+            {} as Record<string, RpcMethodDescriptor>,
+        );
     }
 }
 

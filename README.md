@@ -137,6 +137,31 @@ Creates and starts a gRPC server.
 
 Creates and starts a gRPC client.
 
+## Benchmarks
+
+### Simple "Hello World"
+
+> [!NOTE]
+> This benchmark's server and client were run on same local machine.
+
+#### tRPC
+
+```
+tRPC: 1543.021833ms
+```
+
+#### Elysia
+
+```
+Elysia: 128.935791ms
+```
+
+#### better-grpc
+
+```
+better-grpc: 126.681042ms
+```
+
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.

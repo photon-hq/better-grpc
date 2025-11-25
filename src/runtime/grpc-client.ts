@@ -6,11 +6,11 @@ export async function createGrpcClient<T extends ServiceImpl<any, "client">[]>(
     ...serviceImpls: T
 ): Promise<{ [I in T[number] as ServiceNameOf<I>]: ServiceCallable<I> }> {
     const grpcClientInstance = new GrpcClient(address, serviceImpls);
-    
-    grpcClientInstance.start()
-    await grpcClientInstance.waitUntilReady()
-    grpcClientInstance.watching()
-    grpcClientInstance.bindFns()
-    
+
+    grpcClientInstance.start();
+    await grpcClientInstance.waitUntilReady();
+    grpcClientInstance.watching();
+    grpcClientInstance.bindFns();
+
     return grpcClientInstance as any;
 }

@@ -1,7 +1,7 @@
 import { pushable } from "it-pushable";
 import type { ServiceImpl } from "../core/service";
-import type { GrpcServer } from "./server";
 import { decodeRequestMessage, decodeResponseMessage, encodeResponseMessage } from "./message";
+import type { GrpcServer } from "./server";
 
 // Server Side Implementation
 export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcServer: GrpcServer) {
@@ -11,7 +11,7 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
         switch (`${descriptor.serviceType}:${descriptor.methodType}`) {
             case "server:unary":
                 (grpcImpl as any)[name.toUpperCase()] = async (req: any) => {
-                    const [_, value] = decodeRequestMessage(req)
+                    const [_, value] = decodeRequestMessage(req);
                     const result = await serviceImpl.implementation[name](...value);
                     return encodeResponseMessage(undefined, result);
                 };
@@ -20,10 +20,10 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
                 (grpcImpl as any)[name.toUpperCase()] = async function* (incomingStream: any) {
                     const stream = pushable<any>({ objectMode: true });
 
-                    grpcServer.setStream(serviceImpl.serviceClass.serviceName, name, stream)
-                    
+                    grpcServer.setStream(serviceImpl.serviceClass.serviceName, name, stream);
+
                     // listening for response
-                    ;(async () => {
+                    (async () => {
                         for await (const message of incomingStream) {
                             const [id, value] = decodeResponseMessage(message);
                             if (id) {
@@ -32,8 +32,8 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
                                 throw new Error(`Invalid response message: ${message}`);
                             }
                         }
-                        
-                        stream.end()
+
+                        stream.end();
                     })();
 
                     yield* stream;
