@@ -48,6 +48,7 @@ export class GrpcServer {
                         break;
                     case "client":
                         (serviceCallableInstance as any)[name] = async (...args: any[]) => {
+                            console.log("called - 2");
                             const stream = this.getStream(serviceImpl.serviceClass.serviceName, name.toUpperCase());
                             const requestId = crypto.randomUUID();
                             return new Promise((resolve) => {

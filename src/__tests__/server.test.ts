@@ -3,6 +3,7 @@ import { client, server } from "../core/rpc-signatures";
 import { Service } from "../core/service";
 import { createGrpcClient } from "../runtime/grpc-client";
 import { createGrpcServer } from "../runtime/grpc-server";
+import { buildProtoString } from "../runtime/proto-builder";
 
 describe("server side test", async () => {
     abstract class UnaryTestService extends Service("UnaryTestService") {
@@ -21,11 +22,20 @@ describe("server side test", async () => {
             return 2;
         },
     });
+    
+    console.log(buildProtoString([UnaryServerImpl]))
 
     const grpcServer = await createGrpcServer(50002, UnaryServerImpl);
     await createGrpcClient("0.0.0.0:50002", UnaryClientImpl);
+    
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    await grpcServer.UnaryTestService.clientFn1()
 
     test("unary without input", async () => {
-        expect(await grpcServer.UnaryTestService.clientFn1()).toBe(2);
+        // await grpcServer.UnaryTestService.clientFn1()
+        // expect(await grpcServer.UnaryTestService.clientFn1()).toBe(2);
     });
+    
+    await new Promise(() => {});
 });

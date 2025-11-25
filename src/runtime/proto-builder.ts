@@ -24,10 +24,10 @@ export function buildServiceProto<T extends ServiceImpl<any, any>>(base: T) {
 
         switch (key) {
             case "server:unary":
-                methods += `rpc ${name.toUpperCase()}(stream BetterGrpcMessage) returns (stream BetterGrpcMessage);`;
+                methods += `rpc ${name.toUpperCase()}(BetterGrpcMessage) returns (BetterGrpcMessage);`;
                 break;
             case "client:unary":
-                methods += `rpc ${name.toUpperCase()}(BetterGrpcMessage) returns (BetterGrpcMessage);`;
+                methods += `rpc ${name.toUpperCase()}(stream BetterGrpcMessage) returns (stream BetterGrpcMessage);`;
                 break;
             case "bidi:bidi":
                 methods += `rpc ${name.toUpperCase()}(stream BetterGrpcMessage) returns (stream BetterGrpcMessage);`;
