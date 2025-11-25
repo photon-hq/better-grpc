@@ -117,23 +117,23 @@ The traditional workflow for creating gRPC services with TypeScript involves wri
 
 ## API
 
-### `Service(name: string)`
+- `Service(name: string)`
 
 A factory function that creates an abstract service class.
 
-### `server<T>()`
+- `server<T>()`
 
 A helper function to define a server-side function signature. `T` should be a function type.
 
-### `client<T>()`
+- `client<T>()`
 
 A helper function to define a client-side function signature. `T` should be a function type.
 
-### `createGrpcServer(port: number, ...services: ServiceImpl[])`
+- `createGrpcServer(port: number, ...services: ServiceImpl[])`
 
 Creates and starts a gRPC server.
 
-### `createGrpcClient(address: string, ...services: ServiceImpl[])`
+- `createGrpcClient(address: string, ...services: ServiceImpl[])`
 
 Creates and starts a gRPC client.
 
