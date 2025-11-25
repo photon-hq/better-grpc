@@ -23,14 +23,12 @@ describe("server side test", async () => {
         },
     });
     
-    console.log(buildProtoString([UnaryServerImpl]))
 
     const grpcServer = await createGrpcServer(50002, UnaryServerImpl);
     await createGrpcClient("0.0.0.0:50002", UnaryClientImpl);
     
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    await grpcServer.UnaryTestService.clientFn1()
+    const value = await grpcServer.UnaryTestService.clientFn1()
+    console.log('value:', value)
 
     test("unary without input", async () => {
         // await grpcServer.UnaryTestService.clientFn1()

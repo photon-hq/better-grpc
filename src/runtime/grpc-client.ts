@@ -8,6 +8,7 @@ export async function createGrpcClient<T extends ServiceImpl<any, "client">[]>(
     const grpcClientInstance = new GrpcClient(address, serviceImpls);
     
     grpcClientInstance.start()
+    await grpcClientInstance.waitUntilReady()
     grpcClientInstance.watching()
     grpcClientInstance.bindFns()
     

@@ -3,6 +3,7 @@ import { pushable } from "it-pushable";
 import { type Channel, type ClientFactory, createChannel, createClientFactory } from "nice-grpc";
 import type { ServiceImpl } from "../core/service";
 import { loadProtoFromString } from "../utils/proto-loader";
+import { decodeRequestMessage, encodeResponseMessage } from "./message";
 import { buildProtoString } from "./proto-builder";
 
 export class GrpcClient {
@@ -53,11 +54,15 @@ export class GrpcClient {
                     case "client":
                         switch (descriptor.methodType) {
                             case "unary": {
+                                // received request from server
                                 const incomingStream = pushable<any>({ objectMode: true });
                                 const incomingMessages = client[name.toUpperCase()](incomingStream);
 
-                                ;(async () => {
+                                (async () => {
                                     for await (const message of incomingMessages) {
+                                        const [id, value] = decodeRequestMessage(message);
+                                        const responseValue = await serviceImpl.implementation[name](value);
+                                        incomingStream.push(encodeResponseMessage(id, responseValue));
                                     }
                                 })();
 
@@ -74,4 +79,36 @@ export class GrpcClient {
     }
 
     bindFns() {}
+
+    async waitUntilReady(timeoutMs = 5000) {
+        const channel = this.channel as grpc.Channel;
+        const deadline = new Date(Date.now() + timeoutMs);
+
+        return new Promise<void>((resolve, reject) => {
+            const checkState = () => {
+                const state = channel.getConnectivityState(true);
+
+                if (state === grpc.connectivityState.READY) {
+                    console.log("gRPC channel is ready");
+                    resolve();
+                    return;
+                }
+
+                if (state === grpc.connectivityState.SHUTDOWN) {
+                    reject(new Error("gRPC channel shut down before becoming ready"));
+                    return;
+                }
+
+                channel.watchConnectivityState(state, deadline, (err) => {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+                    checkState();
+                });
+            };
+
+            checkState();
+        });
+    }
 }

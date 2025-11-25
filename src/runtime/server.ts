@@ -37,6 +37,15 @@ export class GrpcServer {
     getStream(serviceName: string, methodName: string): Pushable<any> {
         return (this.pushableStreams[serviceName] as any)[methodName.toUpperCase()];
     }
+    
+    resolveResponse(id: string, value: any) {
+        const resolve = this.pendingRequests.get(id);
+        if (!resolve) {
+            throw new Error(`No pending request found for id: ${id}`);
+        }
+        resolve(value);
+        this.pendingRequests.delete(id);
+    }
 
     bindFns() {
         for (const serviceImpl of this.serviceImpls) {
@@ -46,9 +55,8 @@ export class GrpcServer {
                 switch (descriptor.serviceType) {
                     case "server":
                         break;
-                    case "client":
+                    case "client": // server calling client fn
                         (serviceCallableInstance as any)[name] = async (...args: any[]) => {
-                            console.log("called - 2");
                             const stream = this.getStream(serviceImpl.serviceClass.serviceName, name.toUpperCase());
                             const requestId = crypto.randomUUID();
                             return new Promise((resolve) => {

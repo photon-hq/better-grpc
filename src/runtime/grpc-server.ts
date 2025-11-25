@@ -7,8 +7,7 @@ export async function createGrpcServer<T extends ServiceImpl<any, "server">[]>(
 ): Promise<{ [I in T[number] as ServiceNameOf<I>]: ServiceCallable<I> }> {
     const grpcServerInstance = new GrpcServer(`0.0.0.0:${port}`, serviceImpls);
     
-    await grpcServerInstance.start();
-    
+    await grpcServerInstance.start();   
     grpcServerInstance.bindFns()
 
     return grpcServerInstance as any;

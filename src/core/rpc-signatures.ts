@@ -7,9 +7,9 @@ export type clientSignature<fn extends AnyFn<any>> = fn & { [ScopeTag]: "client"
 export type bidiSignature<fn extends AnyFn<void>> = fn & { [ScopeTag]: "bidi" };
 
 export type RpcMethodDescriptor = {
-    serviceType: "server" | "client" | "bidi",
-    methodType: "unary" | "bidi",
-}
+    serviceType: "server" | "client" | "bidi"; // means where the actual method is called on (e.g. server means client calls this fn)
+    methodType: "unary" | "bidi";
+};
 
 export function server<fn extends AnyFn<any>>(): serverSignature<(...args: Parameters<fn>) => Promise<ReturnType<fn>>> {
     return {
