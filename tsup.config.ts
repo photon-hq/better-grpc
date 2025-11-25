@@ -1,20 +1,17 @@
-import { defineConfig } from 'tsup'
+import { defineConfig } from "tsup";
 
 export default defineConfig({
-    entry: ['src/index.ts'],
-    format: ['cjs', 'esm'],
+    entry: ["src/index.ts"],
+    format: ["cjs", "esm"],
     dts: true,
     sourcemap: true,
     clean: true,
     treeshake: true,
     minify: false,
-    target: 'es2022',
-    outDir: 'dist',
-    platform: 'node',
+    target: "es2022",
+    outDir: "dist",
+    platform: "node",
     splitting: false,
     bundle: true,
-    external: [
-        "zod",
-        "nice-grpc"
-    ]
-})
+    external: ["zod", "nice-grpc"],
+});
