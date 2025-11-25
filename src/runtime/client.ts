@@ -1,6 +1,6 @@
 import * as grpc from "@grpc/grpc-js";
 import { pushable } from "it-pushable";
-import { type Channel, type ClientFactory, createChannel, createClientFactory } from "nice-grpc";
+import { type Channel, ChannelCredentials, type ClientFactory, createChannel, createClientFactory } from "nice-grpc";
 import type { ServiceImpl } from "../core/service";
 import { loadProtoFromString } from "../utils/proto-loader";
 import { decodeRequestMessage, decodeResponseMessage, encodeRequestMessage, encodeResponseMessage } from "./message";
@@ -22,7 +22,7 @@ export class GrpcClient {
 
         const useSSL = !address.includes("localhost") && !address.includes("127.0.0.1") && !address.includes("0.0.0.0");
 
-        const credentials = useSSL ? grpc.credentials.createSsl() : grpc.credentials.createInsecure();
+        const credentials = useSSL ? ChannelCredentials.createSsl() : grpc.credentials.createInsecure();
 
         this.channel = createChannel(address, credentials, {
             "grpc.max_receive_message_length": 10 * 1024 * 1024,
