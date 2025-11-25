@@ -1,2 +1,142 @@
+<div align="center">
+
 # better-grpc
-Simple and Typed gRPC for TypeScript
+
+> Simple, typed gRPC for TypeScript
+
+</div>
+
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)](https://www.typescriptlang.org/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![Discord](https://img.shields.io/badge/Discord-Join-5865F2.svg?logo=discord&logoColor=white)](https://discord.gg/bZd4CMd2H5)
+
+**`better-grpc`** is a library that provides a new way to define and use RPC services in TypeScript, focusing on developer experience and type safety. It eliminates the need for `.proto` files and code generation, allowing you to define your services entirely in TypeScript.
+
+The core idea is to enable seamless communication between a client and a server, allowing you to call server-side functions from the client and client-side functions from the server, as if they were local.
+
+## Features
+
+-   **Type-Safe:** Define your services in TypeScript and get full type safety and autocompletion for your clients and servers.
+-   **No `.proto` files:** No need to write `.proto` files or use `protoc` to generate code.
+-   **Simple API:** The API is designed to be simple and intuitive.
+-   **Symmetric Experience:** Call client-side functions from the server with the same syntax as calling server-side functions from the client.
+
+## Installation
+
+```bash
+bun add better-grpc
+# or
+npm install better-grpc
+# or
+yarn add better-grpc
+```
+
+## Usage
+
+### 1. Define a Service
+
+Create an abstract class that extends `Service` to define your service. Use the `server` and `client` helpers to define where your function is implemented and executed.
+
+```typescript
+import { Service, client, server } from 'better-grpc';
+
+abstract class MyService extends Service('MyService') {
+    // This function is implemented and executed on the server.
+    sayHello = server<(name: string) => string>();
+
+    // This function is implemented and executed on the client.
+    log = client<(message: string) => void>();
+}
+```
+
+### 2. Implement the Service
+
+Provide the implementations for the functions you defined for both the server and the client.
+
+```typescript
+// Server-side implementation
+const myServiceImpl = MyService.Server({
+    async sayHello(name: string) {
+        return `Hello, ${name}!`;
+    },
+});
+
+// Client-side implementation
+const myClientImpl = MyService.Client({
+    async log(message: string) {
+        console.log(`[Server]: ${message}`);
+    }
+});
+```
+
+### 3. Create a Server
+
+Create and start the server, passing in your service implementation.
+
+```typescript
+import { createGrpcServer } from 'better-grpc';
+
+const server = await createGrpcServer(50051, myServiceImpl);
+console.log('Server listening on port 50051');
+```
+
+### 4. Create a Client
+
+Create a client for your service.
+
+```typescript
+import { createGrpcClient } from 'better-grpc';
+
+const client = await createGrpcClient('localhost:50051', myClientImpl);
+```
+
+### 5. Make remote calls
+
+Now you can call remote functions from both the client and the server.
+
+```typescript
+// On the client, call the server's `sayHello` function
+const response = await client.MyService.sayHello('world');
+console.log(response); // Outputs: 'Hello, world!'
+
+// On the server, call client's `log` function
+await server.MyService.log('Greeting from server');
+// The client's console will show: '[Server]: Greeting from server'
+```
+
+## Why `better-grpc`?
+
+The traditional workflow for creating gRPC services with TypeScript involves writing `.proto` files, using `protoc` to generate TypeScript code, and then using that generated code. This process can be cumbersome and result in a disconnect between your service definition and your code.
+
+`better-grpc` solves this problem by allowing you to define your services entirely in TypeScript. This has several advantages:
+
+-   **Single Source of Truth:** Your service definition lives in your TypeScript code, right next to your implementation.
+-   **Improved Type Safety:** Leverage TypeScript's powerful type system for excellent autocompletion and type safety across your client and server.
+-   **Simplified Workflow:** No more `.proto` files, no more code generation. Just write TypeScript.
+-   **Symmetric Communication:** The server can invoke client functions with the same ease that the client invokes server functions, enabling powerful, bidirectional communication patterns.
+
+## API
+
+### `Service(name: string)`
+
+A factory function that creates an abstract service class.
+
+### `server<T>()`
+
+A helper function to define a server-side function signature. `T` should be a function type.
+
+### `client<T>()`
+
+A helper function to define a client-side function signature. `T` should be a function type.
+
+### `createGrpcServer(port: number, ...services: ServiceImpl[])`
+
+Creates and starts a gRPC server.
+
+### `createGrpcClient(address: string, ...services: ServiceImpl[])`
+
+Creates and starts a gRPC client.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.

@@ -3,7 +3,6 @@ import { client, server } from "../core/rpc-signatures";
 import { Service } from "../core/service";
 import { createGrpcClient } from "../runtime/grpc-client";
 import { createGrpcServer } from "../runtime/grpc-server";
-import { createServiceImpl } from "../runtime/service-impl";
 
 describe("client side test", async () => {
     abstract class UnaryTestService extends Service("UnaryTestService") {
