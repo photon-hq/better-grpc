@@ -11,6 +11,7 @@ describe("server side test", async () => {
         clientFn3 = client<(value1: number, value2: number) => number>();
         clientFn4 = client<(value: { sub1: number, sub2: number }) => number>();
         clientFn5 = client<(value1: { sub1: number, sub2: number }, value2: { sub1: string, sub2: string }) => number>();
+        clientFn6 = client<(value: number) => [number, number]>();
         serverFn1 = server<() => number>();
     }
     
@@ -39,6 +40,9 @@ describe("server side test", async () => {
         clientFn5: async (value1: { sub1: number, sub2: number }, value2: { sub1: string, sub2: string }) => {
             return value1.sub1 + value2.sub1.length + value1.sub2 + value2.sub2.length;
         },
+        clientFn6: async (value: number) => {
+            return [value, value + 1];
+        }
     });
     
 
@@ -76,4 +80,9 @@ describe("server side test", async () => {
         expect(await grpcServer.UnaryTestService.clientFn5({ sub1: 3, sub2: 4 }, { sub1: "aaa", sub2: "bbb" })).toBe(13);
     });
 
+    test("unary with array output", async () => {
+        expect(await grpcServer.UnaryTestService.clientFn6(1)).toEqual([1, 2]);
+        expect(await grpcServer.UnaryTestService.clientFn6(2)).toEqual([2, 3]);
+        expect(await grpcServer.UnaryTestService.clientFn6(3)).toEqual([3, 4]);
+    });
 });
