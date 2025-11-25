@@ -61,7 +61,7 @@ export class GrpcClient {
                                 (async () => {
                                     for await (const message of incomingMessages) {
                                         const [id, value] = decodeRequestMessage(message);
-                                        const responseValue = await serviceImpl.implementation[name](value);
+                                        const responseValue = await serviceImpl.implementation[name](...value);
                                         incomingStream.push(encodeResponseMessage(id, responseValue));
                                     }
                                 })();
