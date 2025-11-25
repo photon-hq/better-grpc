@@ -6,7 +6,7 @@
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "https://github.com/photon-hq/better-grpc.git"
+        "url": "git+https://github.com/photon-hq/better-grpc.git"
     },
     "publishConfig": {
         "registry": "https://registry.npmjs.org/",
