@@ -24,21 +24,46 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
 
                     // listening for response
                     (async () => {
-                        for await (const message of incomingStream) {
-                            const [id, value] = decodeResponseMessage(message);
-                            if (id) {
-                                grpcServer.resolveResponse(id, value);
-                            } else {
-                                throw new Error(`Invalid response message: ${message}`);
+                        try {
+                            for await (const message of incomingStream) {
+                                const [id, value] = decodeResponseMessage(message);
+                                if (id) {
+                                    grpcServer.resolveResponse(id, value);
+                                } else {
+                                    throw new Error(`Invalid response message: ${message}`);
+                                }
                             }
+                        } finally {
+                            stream.end();
                         }
-
-                        stream.end();
                     })();
 
                     yield* stream;
                 };
 
+                break;
+            case "bidi:bidi":
+                (grpcImpl as any)[name.toUpperCase()] = async function* (incomingStream: any) {
+                    const outStream = pushable<any>({ objectMode: true });
+                    const inStream = pushable<any>({ objectMode: true });
+
+                    grpcServer.setStream(`${serviceImpl.serviceClass.serviceName}_OUT`, name, outStream);
+                    grpcServer.setStream(`${serviceImpl.serviceClass.serviceName}_IN`, name, inStream);
+
+                    (async () => {
+                        try {
+                            for await (const message of incomingStream) {
+                                const [_, value] = decodeResponseMessage(message);
+                                inStream.push(value);
+                            }
+                        } finally {
+                            inStream.end();
+                            outStream.end();
+                        }
+                    })();
+
+                    yield* outStream;
+                };
                 break;
             default:
                 throw new Error(`Unknown method descriptor: ${descriptor} for ${name}`);

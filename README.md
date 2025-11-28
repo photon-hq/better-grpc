@@ -40,7 +40,7 @@ yarn add better-grpc
 Create an abstract class that extends `Service` to define your service. Use the `server` and `client` helpers to define where your function is implemented and executed.
 
 ```typescript
-import { Service, client, server } from 'better-grpc';
+import { Service, client, server, bidi } from 'better-grpc';
 
 abstract class MyService extends Service('MyService') {
     // This function is implemented and executed on the server.
@@ -48,6 +48,9 @@ abstract class MyService extends Service('MyService') {
 
     // This function is implemented and executed on the client.
     log = client<(message: string) => void>();
+
+    // This function supports bidirectional streaming between client and server.
+    chat = bidi<(message: string) => void>();
 }
 ```
 
@@ -104,6 +107,28 @@ console.log(response); // Outputs: 'Hello, world!'
 // On the server, call client's `log` function
 await server.MyService.log('Greeting from server');
 // The client's console will show: '[Server]: Greeting from server'
+```
+
+### 6. Use bidirectional streams
+
+Bidirectional gRPCs expose a function that both emits values (when you invoke it) and acts as an async iterator so you can consume the opposite side's messages.
+
+```typescript
+// Client usage
+await client.MyService.chat('hello from client'); // emit to the server
+
+for await (const [message] of client.MyService.chat) {
+    console.log('Server replied:', message);
+    break;
+}
+
+// Server usage mirrors the client
+await server.MyService.chat('hello from server'); // emit to the client
+
+for await (const [message] of server.MyService.chat) {
+    console.log('Client replied:', message);
+    break;
+}
 ```
 
 ## Why `better-grpc`?

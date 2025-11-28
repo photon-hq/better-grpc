@@ -1,6 +1,6 @@
 import { type GrpcObject, loadPackageDefinition } from "@grpc/grpc-js";
 import { fromJSON, type Options as ProtoLoaderOptions } from "@grpc/proto-loader";
-import { common, parse, Root } from "protobufjs";
+import { parse, Root } from "protobufjs";
 
 const PROTO_OPTIONS: ProtoLoaderOptions = {
     keepCase: true,
