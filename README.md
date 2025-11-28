@@ -2,6 +2,8 @@
 
 # better-grpc
 
+![Banner](./.github/assets/banner.png)
+
 > Simple, typed gRPC for TypeScript
 
 </div>
