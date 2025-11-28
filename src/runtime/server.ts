@@ -57,7 +57,6 @@ export class GrpcServer {
         return stream;
     }
 
-
     resolveResponse(id: string, value: any) {
         const resolve = this.pendingRequests.get(id);
         if (!resolve) {
@@ -99,8 +98,8 @@ export class GrpcServer {
                                 `${serviceImpl.serviceClass.serviceName}_OUT`,
                                 name.toUpperCase(),
                             );
-                            
-                            outStream.push(encodeRequestMessage(undefined, args))
+
+                            outStream.push(encodeRequestMessage(undefined, args));
                         };
 
                         const hybrid = Object.assign(emitFn, {

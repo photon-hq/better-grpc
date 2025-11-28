@@ -27,12 +27,12 @@ describe("bidi test", async () => {
     }
 
     test("client -> server", async () => {
-        grpcClient.BidiTestService.bidiFn1("hello")
-        expect((await getFirstResult(grpcServer.BidiTestService.bidiFn1))[0]).toBe("hello")
+        grpcClient.BidiTestService.bidiFn1("hello");
+        expect((await getFirstResult(grpcServer.BidiTestService.bidiFn1))[0]).toBe("hello");
     });
-    
+
     test("server -> client", async () => {
-        grpcServer.BidiTestService.bidiFn1("hello")
-        expect((await getFirstResult(grpcClient.BidiTestService.bidiFn1))[0]).toBe("hello")
+        grpcServer.BidiTestService.bidiFn1("hello");
+        expect((await getFirstResult(grpcClient.BidiTestService.bidiFn1))[0]).toBe("hello");
     });
 });
