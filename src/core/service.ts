@@ -39,7 +39,7 @@ export function Service<N extends string>(name: N) {
     abstract class BaseService {
         static serviceName = name;
 
-        static Server<T extends AbstractServiceClass, Impl extends ServerFn<InstanceType<T>>>(
+        static Server<T extends AbstractServiceClass, Impl extends ServerFn<InstanceType<T>, false>>(
             this: T,
             implementation: Impl,
         ): ServiceImpl<T, "server"> {
@@ -47,7 +47,7 @@ export function Service<N extends string>(name: N) {
             return new ServiceImpl<T, "server">(implementation, "server", this);
         }
 
-        static Client<T extends AbstractServiceClass, Impl extends ClientFn<InstanceType<T>>>(
+        static Client<T extends AbstractServiceClass, Impl extends ClientFn<InstanceType<T>, false>>(
             this: T,
             implementation: Impl,
         ): ServiceImpl<T, "client"> {
