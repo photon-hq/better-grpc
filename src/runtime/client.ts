@@ -1,5 +1,5 @@
 import * as grpc from "@grpc/grpc-js";
-import { pushable } from "it-pushable";
+import { type Pushable, pushable } from "it-pushable";
 import { type Channel, ChannelCredentials, type ClientFactory, createChannel, createClientFactory } from "nice-grpc";
 import type { ServiceImpl } from "../core/service";
 import { loadProtoFromString } from "../utils/proto-loader";
@@ -14,6 +14,9 @@ export class GrpcClient {
     readonly proto: grpc.GrpcObject;
 
     clients = new Map<string, any>();
+
+    pushableStreams: Record<string, Record<string, Pushable<any>>> = {};
+    pendingStreams = new Map<string, (value: Pushable<any>) => void>();
 
     constructor(address: string, serviceImpls: ServiceImpl<any, "client">[]) {
         this.address = address;
@@ -46,33 +49,65 @@ export class GrpcClient {
         }
     }
 
+    setStream(serviceName: string, methodName: string, stream: Pushable<any>) {
+        if (!this.pushableStreams[serviceName]) {
+            this.pushableStreams[serviceName] = {};
+        }
+        (this.pushableStreams[serviceName] as any)[methodName.toUpperCase()] = stream;
+        if (this.pendingStreams.has(`${serviceName}.${methodName.toUpperCase()}`)) {
+            const resolve = this.pendingStreams.get(`${serviceName}.${methodName.toUpperCase()}`);
+            resolve?.(stream);
+            this.pendingStreams.delete(`${serviceName}.${methodName.toUpperCase()}`);
+        }
+    }
+
+    async getStream(serviceName: string, methodName: string): Promise<Pushable<any>> {
+        const stream = this.pushableStreams[serviceName]?.[methodName.toUpperCase()];
+        if (!stream) {
+            return new Promise((resolve) => {
+                this.pendingStreams.set(`${serviceName}.${methodName.toUpperCase()}`, resolve);
+            });
+        }
+        return stream;
+    }
+
     watching() {
         for (const serviceImpl of this.serviceImpls) {
             const client = this.clients.get(serviceImpl.serviceClass.serviceName);
             for (const [name, descriptor] of Object.entries(serviceImpl.methods())) {
-                switch (descriptor.serviceType) {
-                    case "client":
-                        switch (descriptor.methodType) {
-                            case "unary": {
-                                // received request from server
-                                const incomingStream = pushable<any>({ objectMode: true });
-                                const incomingMessages = client[name.toUpperCase()](incomingStream);
+                switch (`${descriptor.serviceType}:${descriptor.methodType}`) {
+                    case "client:unary": {
+                        const incomingStream = pushable<any>({ objectMode: true });
+                        const incomingMessages = client[name.toUpperCase()](incomingStream);
 
-                                (async () => {
-                                    for await (const message of incomingMessages) {
-                                        const [id, value] = decodeRequestMessage(message);
-                                        const responseValue = await serviceImpl.implementation[name](...value);
-                                        incomingStream.push(encodeResponseMessage(id, responseValue));
-                                    }
-                                })();
-
-                                break;
+                        (async () => {
+                            for await (const message of incomingMessages) {
+                                const [id, value] = decodeRequestMessage(message);
+                                const responseValue = await serviceImpl.implementation[name](...value);
+                                incomingStream.push(encodeResponseMessage(id, responseValue));
                             }
-                        }
+                        })();
+
                         break;
-                    case "bidi":
-                        // TODO: Implement bidi watching
+                    }
+                    case "bidi:bidi": {
+                        const outStream = pushable<any>({ objectMode: true });
+                        const inStream = pushable<any>({ objectMode: true });
+
+                        this.setStream(`${serviceImpl.serviceClass.serviceName}_OUT`, name.toUpperCase(), outStream);
+                        this.setStream(`${serviceImpl.serviceClass.serviceName}_IN`, name.toUpperCase(), inStream);
+
+                        const incomingMessage = client[name.toUpperCase()](outStream);
+
+                        (async () => {
+                            for await (const message of incomingMessage) {
+                                const [_, value] = decodeRequestMessage(message);
+                                inStream.push(value);
+                            }
+                        })();
+
                         break;
+                    }
                 }
             }
         }
@@ -93,6 +128,37 @@ export class GrpcClient {
                             return value;
                         };
                         break;
+                    case "bidi:bidi": {
+                        async function* generator(client: GrpcClient) {
+                            const inStream = await client.getStream(
+                                `${serviceImpl.serviceClass.serviceName}_IN`,
+                                name.toUpperCase(),
+                            );
+
+                            yield* inStream;
+                        }
+                        const iterator = generator(this);
+
+                        const emitFn = async (...args: any[]): Promise<void> => {
+                            const outStream = await this.getStream(
+                                `${serviceImpl.serviceClass.serviceName}_OUT`,
+                                name.toUpperCase(),
+                            );
+
+                            outStream.push(encodeRequestMessage(undefined, args));
+                        };
+
+                        const hybrid = Object.assign(emitFn, {
+                            next: iterator.next.bind(iterator),
+                            return: iterator.return.bind(iterator),
+                            throw: iterator.throw.bind(iterator),
+                            [Symbol.asyncIterator]: () => hybrid, // Return the hybrid itself
+                        });
+
+                        (serviceCallableInstance as any)[name] = hybrid;
+
+                        break;
+                    }
                 }
             }
 
