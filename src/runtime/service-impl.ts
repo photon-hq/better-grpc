@@ -24,16 +24,18 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
 
                     // listening for response
                     (async () => {
-                        for await (const message of incomingStream) {
-                            const [id, value] = decodeResponseMessage(message);
-                            if (id) {
-                                grpcServer.resolveResponse(id, value);
-                            } else {
-                                throw new Error(`Invalid response message: ${message}`);
+                        try {
+                            for await (const message of incomingStream) {
+                                const [id, value] = decodeResponseMessage(message);
+                                if (id) {
+                                    grpcServer.resolveResponse(id, value);
+                                } else {
+                                    throw new Error(`Invalid response message: ${message}`);
+                                }
                             }
+                        } finally {
+                            stream.end();
                         }
-
-                        stream.end();
                     })();
 
                     yield* stream;
@@ -49,13 +51,15 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
                     grpcServer.setStream(`${serviceImpl.serviceClass.serviceName}_IN`, name, inStream);
 
                     (async () => {
-                        for await (const message of incomingStream) {
-                            const [_, value] = decodeResponseMessage(message);
-                            inStream.push(value);
+                        try {
+                            for await (const message of incomingStream) {
+                                const [_, value] = decodeResponseMessage(message);
+                                inStream.push(value);
+                            }
+                        } finally {
+                            inStream.end();
+                            outStream.end();
                         }
-
-                        inStream.end();
-                        outStream.end();
                     })();
 
                     yield* outStream;

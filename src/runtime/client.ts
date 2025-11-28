@@ -81,10 +81,14 @@ export class GrpcClient {
                         const incomingMessages = client[name.toUpperCase()](incomingStream);
 
                         (async () => {
-                            for await (const message of incomingMessages) {
-                                const [id, value] = decodeRequestMessage(message);
-                                const responseValue = await serviceImpl.implementation[name](...value);
-                                incomingStream.push(encodeResponseMessage(id, responseValue));
+                            try {
+                                for await (const message of incomingMessages) {
+                                    const [id, value] = decodeRequestMessage(message);
+                                    const responseValue = await serviceImpl.implementation[name](...value);
+                                    incomingStream.push(encodeResponseMessage(id, responseValue));
+                                }
+                            } finally {
+                                incomingStream.end();
                             }
                         })();
 
@@ -97,12 +101,17 @@ export class GrpcClient {
                         this.setStream(`${serviceImpl.serviceClass.serviceName}_OUT`, name.toUpperCase(), outStream);
                         this.setStream(`${serviceImpl.serviceClass.serviceName}_IN`, name.toUpperCase(), inStream);
 
-                        const incomingMessage = client[name.toUpperCase()](outStream);
+                        const incomingMessages = client[name.toUpperCase()](outStream);
 
                         (async () => {
-                            for await (const message of incomingMessage) {
-                                const [_, value] = decodeRequestMessage(message);
-                                inStream.push(value);
+                            try {
+                                for await (const message of incomingMessages) {
+                                    const [_, value] = decodeRequestMessage(message);
+                                    inStream.push(value);
+                                }
+                            } finally {
+                                inStream.end();
+                                outStream.end();
                             }
                         })();
 
