@@ -1,22 +1,33 @@
+import type { z } from "zod";
+import type { Context, PrependContext } from "./context";
+
 export declare const ScopeTag: unique symbol;
+export declare const ContextTag: unique symbol;
 
 type AnyFn<R> = (...args: any[]) => R;
 
 type BidiType<fn extends AnyFn<any>> = fn & AsyncGenerator<Parameters<fn>, void, unknown>;
 
-export type serverSignature<fn extends AnyFn<any>> = fn & { [ScopeTag]: "server" };
+export type serverSignature<fn extends AnyFn<any>, C extends Context<any>> = fn & {
+    [ScopeTag]: "server";
+    [ContextTag]: C;
+};
 export type clientSignature<fn extends AnyFn<any>> = fn & { [ScopeTag]: "client" };
 export type bidiSignature<fn extends AnyFn<void>> = fn & { [ScopeTag]: "bidi" };
 
 export type RpcMethodDescriptor = {
     serviceType: "server" | "client" | "bidi"; // means where the actual method is called on (e.g. server means client calls this fn)
     methodType: "unary" | "bidi";
+    config?: { metadata?: z.ZodObject<any> };
 };
 
-export function server<fn extends AnyFn<any>>(): serverSignature<(...args: Parameters<fn>) => Promise<ReturnType<fn>>> {
+export function server<fn extends AnyFn<any>, Meta extends z.ZodObject<any> | undefined = undefined>(config?: {
+    metadata?: Meta;
+}): serverSignature<(...args: Parameters<fn>) => Promise<ReturnType<fn>>, Context<Meta>> {
     return {
         serviceType: "server",
         methodType: "unary",
+        config: config,
     } as RpcMethodDescriptor as any;
 }
 
@@ -37,8 +48,10 @@ export function bidi<fn extends AnyFn<void>>(
 }
 
 // Helper type to extract the raw function from any tagged type
-type Unwrap<T> = T extends serverSignature<infer F>
-    ? F
+type Unwrap<T> = T extends serverSignature<infer F, infer C>
+    ? C extends Context<z.ZodObject<any>>
+        ? (...args: PrependContext<C, Parameters<F>>) => ReturnType<F>
+        : F
     : T extends clientSignature<infer F>
       ? F
       : T extends bidiSignature<infer F>
@@ -48,7 +61,7 @@ type Unwrap<T> = T extends serverSignature<infer F>
 export type ServerFn<T, IncludeBidi extends boolean = true> = {
     // 1. Filter keys: Keep only server or bidi
     [K in keyof T as T[K] extends
-        | serverSignature<AnyFn<any>>
+        | serverSignature<AnyFn<any>, any>
         | (IncludeBidi extends true ? bidiSignature<AnyFn<void>> : never)
         ? K
         : never]: // 2. Extract value: Unwrap to get the raw function
