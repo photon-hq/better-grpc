@@ -40,6 +40,27 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
                 };
 
                 break;
+            case "bidi:bidi":
+                (grpcImpl as any)[name.toUpperCase()] = async function* (incomingStream: any) {
+                    const outStream = pushable<any>({ objectMode: true });
+                    const inStream = pushable<any>({ objectMode: true });
+
+                    grpcServer.setStream(`${serviceImpl.serviceClass.serviceName}_OUT`, name, outStream);
+                    grpcServer.setStream(`${serviceImpl.serviceClass.serviceName}_IN`, name, inStream);
+
+                    (async () => {
+                        for await (const message of incomingStream) {
+                            const [_, value] = decodeResponseMessage(message);
+                            inStream.push(value);
+                        }
+
+                        inStream.end();
+                        outStream.end();
+                    })();
+
+                    yield* outStream;
+                };
+                break;
             default:
                 throw new Error(`Unknown method descriptor: ${descriptor} for ${name}`);
         }

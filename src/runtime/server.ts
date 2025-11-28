@@ -36,6 +36,9 @@ export class GrpcServer {
     }
 
     setStream(serviceName: string, methodName: string, stream: Pushable<any>) {
+        if (!this.pushableStreams[serviceName]) {
+            this.pushableStreams[serviceName] = {};
+        }
         (this.pushableStreams[serviceName] as any)[methodName.toUpperCase()] = stream;
         if (this.pendingStreams.has(`${serviceName}.${methodName.toUpperCase()}`)) {
             const resolve = this.pendingStreams.get(`${serviceName}.${methodName.toUpperCase()}`);
@@ -45,7 +48,7 @@ export class GrpcServer {
     }
 
     async getStream(serviceName: string, methodName: string): Promise<Pushable<any>> {
-        const stream = (this.pushableStreams[serviceName] as any)[methodName.toUpperCase()];
+        const stream = this.pushableStreams[serviceName]?.[methodName.toUpperCase()];
         if (!stream) {
             return new Promise((resolve) => {
                 this.pendingStreams.set(`${serviceName}.${methodName.toUpperCase()}`, resolve);
@@ -53,6 +56,7 @@ export class GrpcServer {
         }
         return stream;
     }
+
 
     resolveResponse(id: string, value: any) {
         const resolve = this.pendingRequests.get(id);
@@ -79,6 +83,37 @@ export class GrpcServer {
                             });
                         };
                         break;
+                    case "bidi:bidi": {
+                        async function* generator(server: GrpcServer) {
+                            const inStream = await server.getStream(
+                                `${serviceImpl.serviceClass.serviceName}_IN`,
+                                name.toUpperCase(),
+                            );
+
+                            yield* inStream;
+                        }
+                        const iterator = generator(this);
+
+                        const emitFn = async (...args: any[]): Promise<void> => {
+                            const outStream = await this.getStream(
+                                `${serviceImpl.serviceClass.serviceName}_OUT`,
+                                name.toUpperCase(),
+                            );
+                            
+                            outStream.push(encodeRequestMessage(undefined, args))
+                        };
+
+                        const hybrid = Object.assign(emitFn, {
+                            next: iterator.next.bind(iterator),
+                            return: iterator.return.bind(iterator),
+                            throw: iterator.throw.bind(iterator),
+                            [Symbol.asyncIterator]: () => hybrid, // Return the hybrid itself
+                        });
+
+                        (serviceCallableInstance as any)[name] = hybrid;
+
+                        break;
+                    }
                 }
             }
 

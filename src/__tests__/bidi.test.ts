@@ -13,10 +13,12 @@ describe("bidi test", async () => {
     
     const BidiClientImpl = BidiTestService.Client({})
     
-    const grpcServer = await createGrpcServer(50001, BidiServerImpl);
-    const grpcClient = await createGrpcClient("0.0.0.0:50001", BidiClientImpl);
+    const grpcServer = await createGrpcServer(50003, BidiServerImpl);
+    const grpcClient = await createGrpcClient("0.0.0.0:50003", BidiClientImpl);
     
-    for await (const [name] of grpcServer.BidiTestService.bidiFn1) {
-        console.log(`Received name: ${name}`);
-    }
+    // for await (const [name] of grpcServer.BidiTestService.bidiFn1) {
+    //     console.log(`Received name: ${name}`);
+    // }
+    
+    grpcServer.BidiTestService.bidiFn1("hi")
 })
