@@ -1,8 +1,7 @@
 <div align="center">
+![Banner](./.github/assets/banner.png)
 
 # better-grpc
-
-![Banner](./.github/assets/banner.png)
 
 > Simple, typed gRPC for TypeScript
 
