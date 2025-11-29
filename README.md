@@ -131,6 +131,52 @@ for await (const [message] of server.MyService.chat) {
 }
 ```
 
+### 7. Attach typed metadata
+
+Define metadata requirements with [Zod](https://github.com/colinhacks/zod) schemas, and `better-grpc` will automatically type the context on both sides and marshal the payload into gRPC metadata.
+
+```typescript
+import { Service, server, bidi } from 'better-grpc';
+import { z } from 'zod';
+
+abstract class GreeterService extends Service('GreeterService') {
+    greet = server<(name: string) => string>()({
+        metadata: z.object({ requestId: z.string() }),
+    });
+
+    chat = bidi<(message: string) => void>()({
+        metadata: z.object({ room: z.string() }),
+    });
+}
+```
+
+Server implementations receive the typed metadata as the first argument:
+
+```typescript
+const GreeterServerImpl = GreeterService.Server({
+    async greet(context, name) {
+        console.log('Request', context.metadata.requestId);
+        return `Hello, ${name}!`;
+    },
+});
+```
+
+On the client, unary calls that require metadata expose a `.withMeta()` helper, and bidi streams provide a `.context()` helper that must be awaited before sending messages:
+
+```typescript
+await client.GreeterService.greet('Ada').withMeta({ requestId: crypto.randomUUID() });
+
+await client.GreeterService.chat.context({
+    metadata: { room: 'general' },
+});
+// you must provide the context before calling the bidi function; 
+// otherwise, it will continue to wait.
+await client.GreeterService.chat('hello from client');
+
+const chatContext = await server.GreeterService.chat.context;
+console.log(chatContext.metadata.room); // 'general'
+```
+
 ## Why `better-grpc`?
 
 The traditional workflow for creating gRPC services with TypeScript involves writing `.proto` files, using `protoc` to generate TypeScript code, and then using that generated code. This process can be cumbersome and result in a disconnect between your service definition and your code.
@@ -150,11 +196,15 @@ A factory function that creates an abstract service class.
 
 - `server<T>()`
 
-A helper function to define a server-side function signature. `T` should be a function type.
+  Defines a server-side unary function signature. `T` should be a function type. Call the returned descriptor with `({ metadata: z.object({...}) })` to require typed metadata for that RPC. Client code then calls `client.MyService.fn(...args).withMeta({...})`, and server handlers receive the context object as the first argument.
 
 - `client<T>()`
 
-A helper function to define a client-side function signature. `T` should be a function type.
+Defines a client-side unary function signature. `T` should be a function type.
+
+- `bidi<T>()`
+
+Defines a bidirectional stream signature. `T` should be a function type that returns `void`. Like `server()`, you can pass `({ metadata: schema })` to type the attached metadata; client stubs expose `bidiFn.context({ metadata })` and server stubs expose `await bidiFn.context` to read it.
 
 - `createGrpcServer(port: number, ...services: ServiceImpl[])`
 
