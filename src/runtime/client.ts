@@ -131,16 +131,16 @@ export class GrpcClient {
                 switch (`${descriptor.serviceType}:${descriptor.methodType}`) {
                     case "server:unary": {
                         if (descriptor.config?.metadata) {
-                            (serviceCallableInstance as any)[name] = {
-                                withMeta: (metadata: any) => {
-                                    return async (...args: any[]) => {
+                            (serviceCallableInstance as any)[name] = (...args: any[]) => {
+                                return {
+                                    withMeta: async (metadata: any) => {
                                         const response = await this.clients
                                             .get(serviceImpl.serviceClass.serviceName)
                                             [name.toUpperCase()](encodeRequestMessage(undefined, args), { metadata: encodeMetadata(metadata) });
                                         const [_, value] = decodeResponseMessage(response);
                                         return value;
-                                    };
-                                },
+                                    },
+                                };
                             };
                         } else {
                             (serviceCallableInstance as any)[name] = async (...args: any[]) => {

@@ -93,6 +93,6 @@ describe("client side test", async () => {
     });
 
     test("unary with metabdata", async () => {
-        const c = grpcClient.UnaryTestService.serverFn7.withMeta({ name: "Test" })();
+        expect(await grpcClient.UnaryTestService.serverFn7().withMeta({ name: "World" })).toBe("Hello World");
     });
 });

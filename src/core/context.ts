@@ -16,7 +16,7 @@ export type ContextRequiredFn<
     C extends Context<any>,
     RequireMeta extends boolean = HasMeta<C>,
 > = RequireMeta extends true
-    ? {
-          withMeta<M extends ExtractMeta<C>>(metadata: z.infer<M>): ContextRequiredFn<fn, C, false>;
-      }
-    : fn;
+    ? (...args: Parameters<fn>) => {
+        withMeta<M extends ExtractMeta<C>>(metadata: z.infer<M>): ContextRequiredFn<fn, C, false>;
+    }
+    : ReturnType<fn>
