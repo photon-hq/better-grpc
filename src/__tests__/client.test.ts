@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { z } from "zod";
 import { client, server } from "../core/rpc-signatures";
 import { Service } from "../core/service";
 import { createGrpcClient } from "../runtime/grpc-client";
@@ -14,6 +15,7 @@ describe("client side test", async () => {
         serverFn5 =
             server<(value1: { sub1: number; sub2: number }, value2: { sub1: string; sub2: string }) => number>();
         serverFn6 = server<(value: number) => [number, number]>();
+        serverFn7 = server<() => string>()({ metadata: z.object({ name: z.string() }) });
     }
 
     let serverValue = 1;
@@ -37,6 +39,9 @@ describe("client side test", async () => {
         },
         serverFn6: async (value: number) => {
             return [value, value + 1];
+        },
+        serverFn7: async (context) => {
+            return `Hello ${context.metadata.name}`;
         },
     });
 

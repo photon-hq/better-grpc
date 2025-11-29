@@ -1,5 +1,5 @@
-import type { z } from "zod";
-import type { Context, PrependContext } from "./context";
+import { z } from "zod";
+import type { Context, DefaultContext, PrependContext } from "./context";
 
 export declare const ScopeTag: unique symbol;
 export declare const ContextTag: unique symbol;
@@ -8,9 +8,10 @@ type AnyFn<R> = (...args: any[]) => R;
 
 type BidiType<fn extends AnyFn<any>> = fn & AsyncGenerator<Parameters<fn>, void, unknown>;
 
-export type serverSignature<fn extends AnyFn<any>, C extends Context<any>> = fn & {
-    [ScopeTag]: "server";
-    [ContextTag]: C;
+export type serverSignature<fn extends AnyFn<any>, C extends Context<any>> = (C extends DefaultContext
+    ? <Meta extends z.ZodObject<any> | undefined>(config: { metadata?: Meta }) => serverSignature<fn, Context<Meta>>
+    : fn) & {
+    [ScopeTag]: "server"
 };
 export type clientSignature<fn extends AnyFn<any>> = fn & { [ScopeTag]: "client" };
 export type bidiSignature<fn extends AnyFn<void>> = fn & { [ScopeTag]: "bidi" };
@@ -21,13 +22,13 @@ export type RpcMethodDescriptor = {
     config?: { metadata?: z.ZodObject<any> };
 };
 
-export function server<fn extends AnyFn<any>, Meta extends z.ZodObject<any> | undefined = undefined>(config?: {
-    metadata?: Meta;
-}): serverSignature<(...args: Parameters<fn>) => Promise<ReturnType<fn>>, Context<Meta>> {
+export function server<fn extends AnyFn<any>>(): serverSignature<
+    (...args: Parameters<fn>) => Promise<ReturnType<fn>>,
+    DefaultContext
+> {
     return {
         serviceType: "server",
         methodType: "unary",
-        config: config,
     } as RpcMethodDescriptor as any;
 }
 
@@ -49,9 +50,9 @@ export function bidi<fn extends AnyFn<void>>(
 
 // Helper type to extract the raw function from any tagged type
 type Unwrap<T> = T extends serverSignature<infer F, infer C>
-    ? C extends Context<z.ZodObject<any>>
-        ? (...args: PrependContext<C, Parameters<F>>) => ReturnType<F>
-        : F
+    ? C extends DefaultContext
+        ? F
+        : (...args: PrependContext<C, Parameters<F>>) => ReturnType<F>
     : T extends clientSignature<infer F>
       ? F
       : T extends bidiSignature<infer F>
