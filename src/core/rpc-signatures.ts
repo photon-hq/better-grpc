@@ -26,10 +26,19 @@ export function server<fn extends AnyFn<any>>(): serverSignature<
     (...args: Parameters<fn>) => Promise<ReturnType<fn>>,
     DefaultContext
 > {
-    return {
+    const descriptor = {
         serviceType: "server",
         methodType: "unary",
-    } as RpcMethodDescriptor as any;
+    } as RpcMethodDescriptor
+    
+    const configFn = (config: any) => {
+        descriptor.config = config;
+        return descriptor;
+    };
+    
+    Object.assign(configFn, descriptor);
+    
+    return configFn as any;
 }
 
 export function client<fn extends AnyFn<any>>(): clientSignature<(...args: Parameters<fn>) => Promise<ReturnType<fn>>> {
