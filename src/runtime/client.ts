@@ -5,6 +5,7 @@ import type { ServiceImpl } from "../core/service";
 import { loadProtoFromString } from "../utils/proto-loader";
 import { decodeRequestMessage, decodeResponseMessage, encodeRequestMessage, encodeResponseMessage } from "./message";
 import { buildProtoString } from "./proto-builder";
+import { encodeMetadata } from "./metadata";
 
 export class GrpcClient {
     readonly address: string;
@@ -128,15 +129,30 @@ export class GrpcClient {
 
             for (const [name, descriptor] of Object.entries(serviceImpl.methods())) {
                 switch (`${descriptor.serviceType}:${descriptor.methodType}`) {
-                    case "server:unary":
-                        (serviceCallableInstance as any)[name] = async (...args: any[]) => {
-                            const response = await this.clients
-                                .get(serviceImpl.serviceClass.serviceName)
-                                [name.toUpperCase()](encodeRequestMessage(undefined, args));
-                            const [_, value] = decodeResponseMessage(response);
-                            return value;
-                        };
+                    case "server:unary": {
+                        if (descriptor.config?.metadata) {
+                            (serviceCallableInstance as any)[name] = {
+                                withMeta: (metadata: any) => {
+                                    return async (...args: any[]) => {
+                                        const response = await this.clients
+                                            .get(serviceImpl.serviceClass.serviceName)
+                                            [name.toUpperCase()](encodeRequestMessage(undefined, args), { metadata: encodeMetadata(metadata) });
+                                        const [_, value] = decodeResponseMessage(response);
+                                        return value;
+                                    };
+                                },
+                            };
+                        } else {
+                            (serviceCallableInstance as any)[name] = async (...args: any[]) => {
+                                const response = await this.clients
+                                    .get(serviceImpl.serviceClass.serviceName)
+                                    [name.toUpperCase()](encodeRequestMessage(undefined, args));
+                                const [_, value] = decodeResponseMessage(response);
+                                return value;
+                            };
+                        }
                         break;
+                    }
                     case "bidi:bidi": {
                         async function* generator(client: GrpcClient) {
                             const inStream = await client.getStream(
