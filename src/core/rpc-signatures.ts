@@ -9,11 +9,13 @@ type AnyFn<R> = (...args: any[]) => R;
 type BidiType<fn extends AnyFn<any>, C extends Context<any>, type extends "server" | "client"> = fn &
     AsyncGenerator<Parameters<fn>, void, unknown> &
     BidiContextType<C, type>;
-type BidiContextType<C extends Context<any>, type extends "server" | "client"> = type extends "client" ? {
-    context: Promise<C>;
-} : {
-    context(context: C): Promise<void>;
-};
+type BidiContextType<C extends Context<any>, type extends "server" | "client"> = type extends "client"
+    ? {
+          context: Promise<C>;
+      }
+    : {
+          context(context: C): Promise<void>;
+      };
 
 export type serverSignature<fn extends AnyFn<any>, C extends Context<any>> = (C extends DefaultContext
     ? <Meta extends z.ZodObject<any> | undefined>(context: { metadata?: Meta }) => serverSignature<fn, Context<Meta>>
@@ -78,7 +80,10 @@ export function bidi<fn extends AnyFn<void>>(
 }
 
 // Helper type to extract the raw function from any tagged type
-type Unwrap<T, type extends "server" | "client", ContextChain extends boolean = false> = T extends serverSignature<infer F, infer C>
+type Unwrap<T, type extends "server" | "client", ContextChain extends boolean = false> = T extends serverSignature<
+    infer F,
+    infer C
+>
     ? C extends DefaultContext
         ? F
         : ContextChain extends true

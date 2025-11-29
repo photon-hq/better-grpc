@@ -161,7 +161,7 @@ const GreeterServerImpl = GreeterService.Server({
 });
 ```
 
-On the client, unary calls that require metadata expose a `.withMeta()` helper, and bidi streams provide a `.context()` helper that must be awaited before sending messages:
+On the client, unary calls that require metadata expose a `.withMeta()` helper, and bidi streams provide a `.context()` helper that must be awaited and called before sending messages (the bidi stream will be established after calling `.context()`):
 
 ```typescript
 await client.GreeterService.greet('Ada').withMeta({ requestId: crypto.randomUUID() });
@@ -172,10 +172,14 @@ await client.GreeterService.chat.context({
 // you must provide the context before calling the bidi function; 
 // otherwise, it will continue to wait.
 await client.GreeterService.chat('hello from client');
+```
 
+On the server side, the bidi function expose a `.context` value that can be used to access metadata:
+
+```typescript
 const chatContext = await server.GreeterService.chat.context;
 console.log(chatContext.metadata.room); // 'general'
-```
+````
 
 ## Why `better-grpc`?
 
@@ -196,7 +200,7 @@ A factory function that creates an abstract service class.
 
 - `server<T>()`
 
-  Defines a server-side unary function signature. `T` should be a function type. Call the returned descriptor with `({ metadata: z.object({...}) })` to require typed metadata for that RPC. Client code then calls `client.MyService.fn(...args).withMeta({...})`, and server handlers receive the context object as the first argument.
+Defines a server-side unary function signature. `T` should be a function type. Call the returned descriptor with `({ metadata: z.object({...}) })` to require typed metadata for that RPC. Client code then calls `client.MyService.fn(...args).withMeta({...})`, and server handlers receive the context object as the first argument.
 
 - `client<T>()`
 

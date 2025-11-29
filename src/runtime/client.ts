@@ -201,7 +201,6 @@ export class GrpcClient {
                             context: async (ctx: any) => {
                                 const resolve = this.pendingBidi.get(`${serviceImpl.serviceClass.serviceName}:${name}`);
                                 if (resolve) {
-                                    
                                     resolve(ctx);
                                 }
                             },

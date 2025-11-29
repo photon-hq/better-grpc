@@ -17,7 +17,7 @@ export class GrpcServer {
     pushableStreams: Record<string, Record<string, Pushable<any>>> = {};
     pendingRequests = new Map<string, (value: any) => void>();
     pendingStreams = new Map<string, (value: Pushable<any>) => void>();
-    
+
     contexts = new Map<string, Context<any>>();
     pendingContext = new Map<string, (value: Context<any>) => void>();
 
@@ -60,7 +60,7 @@ export class GrpcServer {
         }
         return stream;
     }
-    
+
     setContext(serviceName: string, methodName: string, context: Context<any>) {
         this.contexts.set(`${serviceName}.${methodName.toUpperCase()}`, context);
         if (this.pendingContext.has(`${serviceName}.${methodName.toUpperCase()}`)) {
@@ -69,7 +69,7 @@ export class GrpcServer {
             this.pendingContext.delete(`${serviceName}.${methodName.toUpperCase()}`);
         }
     }
-    
+
     async getContext(serviceName: string, methodName: string): Promise<Context<any>> {
         const context = this.contexts.get(`${serviceName}.${methodName.toUpperCase()}`);
         if (!context) {
@@ -126,7 +126,7 @@ export class GrpcServer {
                         };
 
                         const context = {
-                            context: this.getContext(serviceImpl.serviceClass.serviceName, name)
+                            context: this.getContext(serviceImpl.serviceClass.serviceName, name),
                         };
 
                         const hybrid = Object.assign(emitFn, {
