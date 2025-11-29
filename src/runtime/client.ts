@@ -1,9 +1,11 @@
 import * as grpc from "@grpc/grpc-js";
 import { type Pushable, pushable } from "it-pushable";
 import { type Channel, ChannelCredentials, type ClientFactory, createChannel, createClientFactory } from "nice-grpc";
+import type { Context } from "../core/context";
 import type { ServiceImpl } from "../core/service";
 import { loadProtoFromString } from "../utils/proto-loader";
 import { decodeRequestMessage, decodeResponseMessage, encodeRequestMessage, encodeResponseMessage } from "./message";
+import { encodeMetadata } from "./metadata";
 import { buildProtoString } from "./proto-builder";
 
 export class GrpcClient {
@@ -17,6 +19,7 @@ export class GrpcClient {
 
     pushableStreams: Record<string, Record<string, Pushable<any>>> = {};
     pendingStreams = new Map<string, (value: Pushable<any>) => void>();
+    pendingBidi = new Map<string, (context: Context<any>) => void>(); // bidi that is waiting for context
 
     constructor(address: string, serviceImpls: ServiceImpl<any, "client">[]) {
         this.address = address;
@@ -95,25 +98,45 @@ export class GrpcClient {
                         break;
                     }
                     case "bidi:bidi": {
-                        const outStream = pushable<any>({ objectMode: true });
-                        const inStream = pushable<any>({ objectMode: true });
+                        const setupBidi = (context: Context<any> | undefined) => {
+                            const outStream = pushable<any>({ objectMode: true });
+                            const inStream = pushable<any>({ objectMode: true });
 
-                        this.setStream(`${serviceImpl.serviceClass.serviceName}_OUT`, name.toUpperCase(), outStream);
-                        this.setStream(`${serviceImpl.serviceClass.serviceName}_IN`, name.toUpperCase(), inStream);
+                            this.setStream(
+                                `${serviceImpl.serviceClass.serviceName}_OUT`,
+                                name.toUpperCase(),
+                                outStream,
+                            );
+                            this.setStream(`${serviceImpl.serviceClass.serviceName}_IN`, name.toUpperCase(), inStream);
 
-                        const incomingMessages = client[name.toUpperCase()](outStream);
+                            const incomingMessages = context
+                                ? client[name.toUpperCase()](outStream, { metadata: encodeMetadata(context.metadata) })
+                                : client[name.toUpperCase()](outStream);
 
-                        (async () => {
-                            try {
-                                for await (const message of incomingMessages) {
-                                    const [_, value] = decodeRequestMessage(message);
-                                    inStream.push(value);
+                            (async () => {
+                                try {
+                                    for await (const message of incomingMessages) {
+                                        const [_, value] = decodeRequestMessage(message);
+                                        inStream.push(value);
+                                    }
+                                } finally {
+                                    inStream.end();
+                                    outStream.end();
                                 }
-                            } finally {
-                                inStream.end();
-                                outStream.end();
-                            }
-                        })();
+                            })();
+                        };
+
+                        if (descriptor.context) {
+                            (async () => {
+                                const context = await new Promise((resolve) => {
+                                    this.pendingBidi.set(`${serviceImpl.serviceClass.serviceName}.${name}`, resolve);
+                                });
+
+                                setupBidi(context as any);
+                            })();
+                        } else {
+                            setupBidi(undefined);
+                        }
 
                         break;
                     }
@@ -128,15 +151,32 @@ export class GrpcClient {
 
             for (const [name, descriptor] of Object.entries(serviceImpl.methods())) {
                 switch (`${descriptor.serviceType}:${descriptor.methodType}`) {
-                    case "server:unary":
-                        (serviceCallableInstance as any)[name] = async (...args: any[]) => {
-                            const response = await this.clients
-                                .get(serviceImpl.serviceClass.serviceName)
-                                [name.toUpperCase()](encodeRequestMessage(undefined, args));
-                            const [_, value] = decodeResponseMessage(response);
-                            return value;
-                        };
+                    case "server:unary": {
+                        if (descriptor.context?.metadata) {
+                            (serviceCallableInstance as any)[name] = (...args: any[]) => {
+                                return {
+                                    withMeta: async (metadata: any) => {
+                                        const response = await this.clients
+                                            .get(serviceImpl.serviceClass.serviceName)
+                                            [name.toUpperCase()](encodeRequestMessage(undefined, args), {
+                                                metadata: encodeMetadata(metadata),
+                                            });
+                                        const [_, value] = decodeResponseMessage(response);
+                                        return value;
+                                    },
+                                };
+                            };
+                        } else {
+                            (serviceCallableInstance as any)[name] = async (...args: any[]) => {
+                                const response = await this.clients
+                                    .get(serviceImpl.serviceClass.serviceName)
+                                    [name.toUpperCase()](encodeRequestMessage(undefined, args));
+                                const [_, value] = decodeResponseMessage(response);
+                                return value;
+                            };
+                        }
                         break;
+                    }
                     case "bidi:bidi": {
                         async function* generator(client: GrpcClient) {
                             const inStream = await client.getStream(
@@ -157,12 +197,24 @@ export class GrpcClient {
                             outStream.push(encodeRequestMessage(undefined, args));
                         };
 
+                        const context = {
+                            context: async (ctx: any) => {
+                                const resolve = this.pendingBidi.get(`${serviceImpl.serviceClass.serviceName}.${name}`);
+                                if (resolve) {
+                                    resolve(ctx);
+                                    this.pendingBidi.delete(`${serviceImpl.serviceClass.serviceName}.${name}`);
+                                }
+                            },
+                        };
+
                         const hybrid = Object.assign(emitFn, {
                             next: iterator.next.bind(iterator),
                             return: iterator.return.bind(iterator),
                             throw: iterator.throw.bind(iterator),
                             [Symbol.asyncIterator]: () => hybrid, // Return the hybrid itself
                         });
+
+                        Object.assign(hybrid, context);
 
                         (serviceCallableInstance as any)[name] = hybrid;
 
