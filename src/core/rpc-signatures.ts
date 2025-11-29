@@ -1,5 +1,5 @@
-import { z } from "zod";
-import type { Context, DefaultContext, PrependContext } from "./context";
+import type { z } from "zod";
+import type { Context, ContextRequiredFn, DefaultContext, PrependContext } from "./context";
 
 export declare const ScopeTag: unique symbol;
 export declare const ContextTag: unique symbol;
@@ -58,24 +58,24 @@ export function bidi<fn extends AnyFn<void>>(
 }
 
 // Helper type to extract the raw function from any tagged type
-type Unwrap<T> = T extends serverSignature<infer F, infer C>
+type Unwrap<T, ConfigChain extends boolean = false> = T extends serverSignature<infer F, infer C>
     ? C extends DefaultContext
         ? F
-        : (...args: PrependContext<C, Parameters<F>>) => ReturnType<F>
+        : ConfigChain extends true ? ContextRequiredFn<F, C> : (...args: PrependContext<C, Parameters<F>>) => ReturnType<F>
     : T extends clientSignature<infer F>
       ? F
       : T extends bidiSignature<infer F>
         ? BidiType<F>
         : never;
 
-export type ServerFn<T, IncludeBidi extends boolean = true> = {
+export type ServerFn<T, IncludeBidi extends boolean = true, ConfigChain extends boolean = false> = {
     // 1. Filter keys: Keep only server or bidi
     [K in keyof T as T[K] extends
         | serverSignature<AnyFn<any>, any>
         | (IncludeBidi extends true ? bidiSignature<AnyFn<void>> : never)
         ? K
         : never]: // 2. Extract value: Unwrap to get the raw function
-    Unwrap<T[K]>;
+    Unwrap<T[K], ConfigChain>;
 };
 
 export type ClientFn<T, IncludeBidi extends boolean = true> = {

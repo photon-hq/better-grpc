@@ -67,5 +67,5 @@ export type ServiceNameOf<T extends ServiceImpl<any, any>> = T extends ServiceIm
 export type ServiceCallable<T> = T extends ServiceImpl<infer S, infer Mode>
     ? Mode extends "server"
         ? ClientFn<InstanceType<S>>
-        : ServerFn<InstanceType<S>>
+        : ServerFn<InstanceType<S>, true, true>
     : never;
