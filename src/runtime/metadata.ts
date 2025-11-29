@@ -10,7 +10,7 @@ export function encodeMetadata(raw: z.infer<z.ZodObject<any>>) {
 export function decodeMetadata(metadata: Metadata): z.infer<z.ZodObject<any>> {
     const betterGrpcMetadata = metadata.get("better-grpc");
     if (!betterGrpcMetadata) {
-        throw new Error("Missing 'better-grpc' metadata");
+        throw new Error("Failed to decode metadata: 'better-grpc' key not found in gRPC metadata");
     }
     return JSON.parse(betterGrpcMetadata);
 }

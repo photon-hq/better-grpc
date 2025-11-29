@@ -169,7 +169,7 @@ await client.GreeterService.greet('Ada').withMeta({ requestId: crypto.randomUUID
 await client.GreeterService.chat.context({
     metadata: { room: 'general' },
 });
-// you must provide the context before calling the bidi function; 
+// you must provide the context before calling the bidi function;
 // otherwise, it will continue to wait.
 await client.GreeterService.chat('hello from client');
 ```

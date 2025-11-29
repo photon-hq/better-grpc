@@ -129,7 +129,7 @@ export class GrpcClient {
                         if (descriptor.context) {
                             (async () => {
                                 const context = await new Promise((resolve) => {
-                                    this.pendingBidi.set(`${serviceImpl.serviceClass.serviceName}:${name}`, resolve);
+                                    this.pendingBidi.set(`${serviceImpl.serviceClass.serviceName}.${name}`, resolve);
                                 });
 
                                 setupBidi(context as any);
@@ -199,9 +199,10 @@ export class GrpcClient {
 
                         const context = {
                             context: async (ctx: any) => {
-                                const resolve = this.pendingBidi.get(`${serviceImpl.serviceClass.serviceName}:${name}`);
+                                const resolve = this.pendingBidi.get(`${serviceImpl.serviceClass.serviceName}.${name}`);
                                 if (resolve) {
                                     resolve(ctx);
+                                    this.pendingBidi.delete(`${serviceImpl.serviceClass.serviceName}.${name}`);
                                 }
                             },
                         };
