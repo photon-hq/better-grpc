@@ -1,6 +1,7 @@
 import type { GrpcObject } from "@grpc/grpc-js";
 import type { Pushable } from "it-pushable";
 import { createServer } from "nice-grpc";
+import type { Context } from "../core/context";
 import type { ServiceImpl } from "../core/service";
 import { loadProtoFromString } from "../utils/proto-loader";
 import { encodeRequestMessage } from "./message";
@@ -16,6 +17,9 @@ export class GrpcServer {
     pushableStreams: Record<string, Record<string, Pushable<any>>> = {};
     pendingRequests = new Map<string, (value: any) => void>();
     pendingStreams = new Map<string, (value: Pushable<any>) => void>();
+    
+    contexts = new Map<string, Context<any>>();
+    pendingContext = new Map<string, (value: Context<any>) => void>();
 
     constructor(address: string, serviceImpls: ServiceImpl<any, "server">[]) {
         this.address = address;
@@ -55,6 +59,25 @@ export class GrpcServer {
             });
         }
         return stream;
+    }
+    
+    setContext(serviceName: string, methodName: string, context: Context<any>) {
+        this.contexts.set(`${serviceName}.${methodName.toUpperCase()}`, context);
+        if (this.pendingContext.has(`${serviceName}.${methodName.toUpperCase()}`)) {
+            const resolve = this.pendingContext.get(`${serviceName}.${methodName.toUpperCase()}`);
+            resolve?.(context);
+            this.pendingContext.delete(`${serviceName}.${methodName.toUpperCase()}`);
+        }
+    }
+    
+    async getContext(serviceName: string, methodName: string): Promise<Context<any>> {
+        const context = this.contexts.get(`${serviceName}.${methodName.toUpperCase()}`);
+        if (!context) {
+            return new Promise((resolve) => {
+                this.pendingContext.set(`${serviceName}.${methodName.toUpperCase()}`, resolve);
+            });
+        }
+        return context;
     }
 
     resolveResponse(id: string, value: any) {
@@ -102,12 +125,18 @@ export class GrpcServer {
                             outStream.push(encodeRequestMessage(undefined, args));
                         };
 
+                        const context = {
+                            context: this.getContext(serviceImpl.serviceClass.serviceName, name)
+                        };
+
                         const hybrid = Object.assign(emitFn, {
                             next: iterator.next.bind(iterator),
                             return: iterator.return.bind(iterator),
                             throw: iterator.throw.bind(iterator),
                             [Symbol.asyncIterator]: () => hybrid, // Return the hybrid itself
                         });
+
+                        Object.assign(hybrid, context);
 
                         (serviceCallableInstance as any)[name] = hybrid;
 

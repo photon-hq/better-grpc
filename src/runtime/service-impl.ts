@@ -1,8 +1,8 @@
 import { pushable } from "it-pushable";
 import type { ServiceImpl } from "../core/service";
 import { decodeRequestMessage, decodeResponseMessage, encodeResponseMessage } from "./message";
-import type { GrpcServer } from "./server";
 import { decodeMetadata } from "./metadata";
+import type { GrpcServer } from "./server";
 
 // Server Side Implementation
 export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcServer: GrpcServer) {
@@ -13,7 +13,7 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
             case "server:unary":
                 (grpcImpl as any)[name.toUpperCase()] = async (req: any, ctx: any) => {
                     const [_, value] = decodeRequestMessage(req);
-                    const args = descriptor.config?.metadata 
+                    const args = descriptor.context?.metadata
                         ? [{ metadata: decodeMetadata(ctx.metadata) }, ...value]
                         : value;
                     const result = await serviceImpl.implementation[name](...args);
@@ -47,7 +47,13 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
 
                 break;
             case "bidi:bidi":
-                (grpcImpl as any)[name.toUpperCase()] = async function* (incomingStream: any) {
+                (grpcImpl as any)[name.toUpperCase()] = async function* (incomingStream: any, ctx: any) {
+                    if (descriptor.context) {
+                        grpcServer.setContext(serviceImpl.serviceClass.serviceName, name, {
+                            metadata: decodeMetadata(ctx.metadata),
+                        });
+                    }
+
                     const outStream = pushable<any>({ objectMode: true });
                     const inStream = pushable<any>({ objectMode: true });
 
