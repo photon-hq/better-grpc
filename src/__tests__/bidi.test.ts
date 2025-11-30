@@ -13,6 +13,9 @@ describe("bidi test", async () => {
                 age: z.number(),
             }),
         });
+        bidiFn3 = bidi<(name: string) => void>()({
+            ack: true,
+        });
     }
 
     const BidiServerImpl = BidiTestService.Server({});
@@ -22,11 +25,15 @@ describe("bidi test", async () => {
     const grpcServer = await createGrpcServer(50003, BidiServerImpl);
     const grpcClient = await createGrpcClient("0.0.0.0:50003", BidiClientImpl);
 
-    async function getFirstResult(generator: AsyncGenerator<any>): Promise<any> {
+    async function getResult(generator: AsyncGenerator<any>, firstN: number = 1): Promise<any[]> {
         return new Promise((resolve) => {
             (async () => {
+                const result = []
                 for await (const value of generator) {
-                    resolve(value);
+                    result.push(value)
+                    if (result.length === firstN) {
+                        resolve(result)
+                    }
                 }
             })();
         });
@@ -34,7 +41,8 @@ describe("bidi test", async () => {
 
     test("client -> server", async () => {
         await grpcClient.BidiTestService.bidiFn1("hello");
-        expect((await getFirstResult(grpcServer.BidiTestService.bidiFn1))[0]).toBe("hello");
+        await grpcClient.BidiTestService.bidiFn1("world");
+        expect((await getResult(grpcServer.BidiTestService.bidiFn1, 2))).toEqual([["hello"], ["world"]]);
     });
 
     test("client -> server (metadata)", async () => {
@@ -44,12 +52,46 @@ describe("bidi test", async () => {
             },
         });
         await grpcClient.BidiTestService.bidiFn2("ryan");
-        expect((await getFirstResult(grpcServer.BidiTestService.bidiFn2))[0]).toBe("ryan");
+        expect((await getResult(grpcServer.BidiTestService.bidiFn2))[0][0]).toBe("ryan");
         expect((await grpcServer.BidiTestService.bidiFn2.context).metadata.age).toBe(25);
     });
 
     test("server -> client", async () => {
         await grpcServer.BidiTestService.bidiFn1("hello");
-        expect((await getFirstResult(grpcClient.BidiTestService.bidiFn1))[0]).toBe("hello");
+        expect((await getResult(grpcClient.BidiTestService.bidiFn1))[0][0]).toBe("hello");
+    });
+    
+    test("client -> server (ack)", async () => {
+        const order: string[] = [];
+
+        const clientPromise = (async () => {
+            await grpcClient.BidiTestService.bidiFn3("hello");
+            order.push("client_done");
+        })();
+
+        const serverResult = await getResult(grpcServer.BidiTestService.bidiFn3);
+        order.push("server_received");
+
+        await clientPromise;
+
+        expect(serverResult[0][0]).toBe("hello");
+        expect(order).toEqual(["server_received", "client_done"]);
+    });
+
+    test("client -> server (without ack)", async () => {
+        const order: string[] = [];
+
+        const clientPromise = (async () => {
+            await grpcClient.BidiTestService.bidiFn1("hello");
+            order.push("client_done");
+        })();
+
+        const serverResult = await getResult(grpcServer.BidiTestService.bidiFn1);
+        order.push("server_received");
+
+        await clientPromise;
+
+        expect(serverResult[0][0]).toBe("hello");
+        expect(order).toEqual(["client_done", "server_received"]);
     });
 });

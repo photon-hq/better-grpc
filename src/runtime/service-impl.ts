@@ -1,6 +1,6 @@
 import { pushable } from "it-pushable";
 import type { ServiceImpl } from "../core/service";
-import { decodeRequestMessage, decodeResponseMessage, encodeResponseMessage } from "./message";
+import { decodeRequestMessage, decodeResponseMessage, encodeRequestMessage, encodeResponseMessage } from "./message";
 import { decodeMetadata } from "./metadata";
 import type { GrpcServer } from "./server";
 
@@ -13,7 +13,7 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
             case "server:unary":
                 (grpcImpl as any)[name.toUpperCase()] = async (req: any, ctx: any) => {
                     const [_, value] = decodeRequestMessage(req);
-                    const args = descriptor.context?.metadata
+                    const args = descriptor.config?.metadata
                         ? [{ metadata: decodeMetadata(ctx.metadata) }, ...value]
                         : value;
                     const result = await serviceImpl.implementation[name](...args);
@@ -48,7 +48,7 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
                 break;
             case "bidi:bidi":
                 (grpcImpl as any)[name.toUpperCase()] = async function* (incomingStream: any, ctx: any) {
-                    if (descriptor.context) {
+                    if (descriptor.config?.metadata) {
                         grpcServer.setContext(serviceImpl.serviceClass.serviceName, name, {
                             metadata: decodeMetadata(ctx.metadata),
                         });
@@ -63,8 +63,12 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
                     (async () => {
                         try {
                             for await (const message of incomingStream) {
-                                const [_, value] = decodeResponseMessage(message);
+                                const [id, value] = decodeResponseMessage(message);
                                 inStream.push(value);
+                                
+                                if (descriptor.config?.ack) {
+                                    outStream.push(encodeRequestMessage(id, undefined));
+                                }
                             }
                         } finally {
                             inStream.end();

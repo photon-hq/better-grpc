@@ -1,5 +1,6 @@
 import type { z } from "zod";
 import type { Context, ContextRequiredFn, DefaultContext, PrependContext } from "./context";
+import { fa } from "zod/locales";
 
 export declare const ScopeTag: unique symbol;
 export declare const ContextTag: unique symbol;
@@ -24,7 +25,7 @@ export type serverSignature<fn extends AnyFn<any>, C extends Context<any>> = (C 
 };
 export type clientSignature<fn extends AnyFn<any>> = fn & { [ScopeTag]: "client" };
 export type bidiSignature<fn extends AnyFn<void>, C extends Context<any>> = (C extends DefaultContext
-    ? <Meta extends z.ZodObject<any> | undefined>(context: { metadata?: Meta }) => bidiSignature<fn, Context<Meta>>
+    ? <Meta extends z.ZodObject<any> | undefined, Ack extends boolean = false>(context: { metadata?: Meta, ack?: Ack }) => bidiSignature<fn, Context<Meta>>
     : fn) & {
     [ScopeTag]: "bidi";
 };
@@ -32,7 +33,7 @@ export type bidiSignature<fn extends AnyFn<void>, C extends Context<any>> = (C e
 export type RpcMethodDescriptor = {
     serviceType: "server" | "client" | "bidi"; // means where the actual method is called on (e.g. server means client calls this fn)
     methodType: "unary" | "bidi";
-    context?: { metadata?: z.ZodObject<any> };
+    config?: { metadata: boolean; ack: boolean };
 };
 
 export function server<fn extends AnyFn<any>>(): serverSignature<
@@ -45,7 +46,10 @@ export function server<fn extends AnyFn<any>>(): serverSignature<
     } as RpcMethodDescriptor;
 
     const contextFn = (context: any) => {
-        descriptor.context = context;
+        descriptor.config = {
+            metadata: context.metadata !== undefined,
+            ack: false,
+        };
         return descriptor;
     };
 
@@ -69,14 +73,17 @@ export function bidi<fn extends AnyFn<void>>(
         methodType: "bidi",
     } as RpcMethodDescriptor;
 
-    const contextFn = (context: any) => {
-        descriptor.context = context;
+    const configFn = (config: any) => {
+        descriptor.config = {
+            metadata: config.metadata !== undefined,
+            ack: config.ack ?? false,
+        };
         return descriptor;
     };
 
-    Object.assign(contextFn, descriptor);
+    Object.assign(configFn, descriptor);
 
-    return contextFn as any;
+    return configFn as any;
 }
 
 // Helper type to extract the raw function from any tagged type

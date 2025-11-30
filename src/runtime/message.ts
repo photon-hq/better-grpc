@@ -1,9 +1,9 @@
 import { decode, encode } from "@msgpack/msgpack";
 
-export function encodeRequestMessage(id: string | undefined, value: any[]) {
+export function encodeRequestMessage(id: string | undefined, value: any[] | undefined) {
     return {
         id,
-        value: encode(value),
+        value: value === undefined ? undefined : encode(value),
     };
 }
 
@@ -16,7 +16,7 @@ export function decodeRequestMessage(message: any): [id: string | undefined, dat
 export function encodeResponseMessage(id: string | undefined, value: any) {
     return {
         id,
-        value: encode(value),
+        value: value === undefined ? undefined : encode(value),
     };
 }
 

@@ -114,7 +114,6 @@ export class GrpcServer {
 
                             yield* inStream;
                         }
-                        const iterator = generator(this);
 
                         const emitFn = async (...args: any[]): Promise<void> => {
                             const outStream = await this.getStream(
@@ -130,10 +129,14 @@ export class GrpcServer {
                         };
 
                         const hybrid = Object.assign(emitFn, {
-                            next: iterator.next.bind(iterator),
-                            return: iterator.return.bind(iterator),
-                            throw: iterator.throw.bind(iterator),
-                            [Symbol.asyncIterator]: () => hybrid, // Return the hybrid itself
+                            [Symbol.asyncIterator]: () => {
+                                const iterator = generator(this);
+                                return {
+                                    next: iterator.next.bind(iterator),
+                                    return: iterator.return.bind(iterator),
+                                    throw: iterator.throw.bind(iterator),
+                                };
+                            },
                         });
 
                         Object.assign(hybrid, context);
