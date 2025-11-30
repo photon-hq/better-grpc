@@ -20,6 +20,8 @@ export class GrpcServer {
 
     contexts = new Map<string, Context<any>>();
     pendingContext = new Map<string, (value: Context<any>) => void>();
+    
+    pendingBidiAck = new Map<string, () => void>();
 
     constructor(address: string, serviceImpls: ServiceImpl<any, "server">[]) {
         this.address = address;
@@ -121,7 +123,15 @@ export class GrpcServer {
                                 name.toUpperCase(),
                             );
 
-                            outStream.push(encodeRequestMessage(undefined, args));
+                            const ackId = descriptor.config?.ack ? crypto.randomUUID() : undefined;
+
+                            outStream.push(encodeRequestMessage(ackId, args));
+
+                            if (ackId) {
+                                return new Promise((resolve) => {
+                                    this.pendingBidiAck.set(ackId, resolve);
+                                });
+                            }
                         };
 
                         const context = {

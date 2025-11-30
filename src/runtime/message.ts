@@ -7,9 +7,9 @@ export function encodeRequestMessage(id: string | undefined, value: any[] | unde
     };
 }
 
-export function decodeRequestMessage(message: any): [id: string | undefined, data: any[]] {
+export function decodeRequestMessage(message: any): [id: string | undefined, data: any[] | undefined] {
     const id = message.id;
-    const mapData: any[] = message.value === undefined ? [] : (decode(message.value) as any[]);
+    const mapData = message.value === undefined ? undefined : (decode(message.value) as any[]);
     return [id, mapData];
 }
 

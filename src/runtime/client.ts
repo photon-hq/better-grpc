@@ -88,7 +88,7 @@ export class GrpcClient {
                             try {
                                 for await (const message of incomingMessages) {
                                     const [id, value] = decodeRequestMessage(message);
-                                    const responseValue = await serviceImpl.implementation[name](...value);
+                                    const responseValue = await serviceImpl.implementation[name](...(value ?? []));
                                     incomingStream.push(encodeResponseMessage(id, responseValue));
                                 }
                             } finally {
@@ -118,10 +118,14 @@ export class GrpcClient {
                                 try {
                                     for await (const message of incomingMessages) {
                                         const [id, value] = decodeRequestMessage(message);
-                                        if (id && descriptor.config?.ack) {
+                                        if (id && descriptor.config?.ack && value === undefined) {
                                             this.pendingBidiAck.get(id)?.();
                                         } else {
-                                            inStream.push(value);
+                                            inStream.push(value ?? []);
+                                            if (id && descriptor.config?.ack) {
+                                                console.log("send ack")
+                                                outStream.push(encodeRequestMessage(id, undefined))
+                                            }
                                         }
                                     }
                                 } finally {

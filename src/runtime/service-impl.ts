@@ -14,8 +14,8 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
                 (grpcImpl as any)[name.toUpperCase()] = async (req: any, ctx: any) => {
                     const [_, value] = decodeRequestMessage(req);
                     const args = descriptor.config?.metadata
-                        ? [{ metadata: decodeMetadata(ctx.metadata) }, ...value]
-                        : value;
+                        ? [{ metadata: decodeMetadata(ctx.metadata) }, ...(value ?? [])]
+                        : (value ?? []);
                     const result = await serviceImpl.implementation[name](...args);
                     return encodeResponseMessage(undefined, result);
                 };
@@ -64,10 +64,14 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
                         try {
                             for await (const message of incomingStream) {
                                 const [id, value] = decodeResponseMessage(message);
-                                inStream.push(value);
                                 
-                                if (descriptor.config?.ack) {
-                                    outStream.push(encodeRequestMessage(id, undefined));
+                                if (id && descriptor.config?.ack && value === undefined) {
+                                    grpcServer.pendingBidiAck.get(id)?.();
+                                } else {
+                                    inStream.push(value ?? []);
+                                    if (id && descriptor.config?.ack) {
+                                        outStream.push(encodeRequestMessage(id, undefined))
+                                    }
                                 }
                             }
                         } finally {
