@@ -20,7 +20,7 @@ export class GrpcServer {
 
     contexts = new Map<string, Context<any>>();
     pendingContext = new Map<string, (value: Context<any>) => void>();
-    
+
     pendingBidiAck = new Map<string, () => void>();
 
     constructor(address: string, serviceImpls: ServiceImpl<any, "server">[]) {

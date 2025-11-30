@@ -123,8 +123,8 @@ export class GrpcClient {
                                         } else {
                                             inStream.push(value ?? []);
                                             if (id && descriptor.config?.ack) {
-                                                console.log("send ack")
-                                                outStream.push(encodeRequestMessage(id, undefined))
+                                                console.log("send ack");
+                                                outStream.push(encodeRequestMessage(id, undefined));
                                             }
                                         }
                                     }

@@ -28,11 +28,11 @@ describe("bidi test", async () => {
     async function getResult(generator: AsyncGenerator<any>, firstN: number = 1): Promise<any[]> {
         return new Promise((resolve) => {
             (async () => {
-                const result = []
+                const result = [];
                 for await (const value of generator) {
-                    result.push(value)
+                    result.push(value);
                     if (result.length === firstN) {
-                        resolve(result)
+                        resolve(result);
                     }
                 }
             })();
@@ -42,7 +42,7 @@ describe("bidi test", async () => {
     test("client -> server", async () => {
         await grpcClient.BidiTestService.bidiFn1("hello");
         await grpcClient.BidiTestService.bidiFn1("world");
-        expect((await getResult(grpcServer.BidiTestService.bidiFn1, 2))).toEqual([["hello"], ["world"]]);
+        expect(await getResult(grpcServer.BidiTestService.bidiFn1, 2)).toEqual([["hello"], ["world"]]);
     });
 
     test("client -> server (metadata)", async () => {
@@ -60,7 +60,7 @@ describe("bidi test", async () => {
         await grpcServer.BidiTestService.bidiFn1("hello");
         expect((await getResult(grpcClient.BidiTestService.bidiFn1))[0][0]).toBe("hello");
     });
-    
+
     test("client -> server (ack)", async () => {
         const order: string[] = [];
 
@@ -77,7 +77,7 @@ describe("bidi test", async () => {
         expect(serverResult[0][0]).toBe("hello");
         expect(order).toEqual(["server_received", "client_done"]);
     });
-    
+
     test("server -> client (ack)", async () => {
         const order: string[] = [];
 
@@ -111,7 +111,7 @@ describe("bidi test", async () => {
         expect(serverResult[0][0]).toBe("hello");
         expect(order).toEqual(["client_done", "server_received"]);
     });
-    
+
     test("server -> client (without ack)", async () => {
         const order: string[] = [];
 

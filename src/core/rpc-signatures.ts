@@ -1,6 +1,6 @@
 import type { z } from "zod";
-import type { Context, ContextRequiredFn, DefaultContext, PrependContext } from "./context";
 import { fa } from "zod/locales";
+import type { Context, ContextRequiredFn, DefaultContext, PrependContext } from "./context";
 
 export declare const ScopeTag: unique symbol;
 export declare const ContextTag: unique symbol;
@@ -25,7 +25,10 @@ export type serverSignature<fn extends AnyFn<any>, C extends Context<any>> = (C 
 };
 export type clientSignature<fn extends AnyFn<any>> = fn & { [ScopeTag]: "client" };
 export type bidiSignature<fn extends AnyFn<void>, C extends Context<any>> = (C extends DefaultContext
-    ? <Meta extends z.ZodObject<any> | undefined, Ack extends boolean = false>(context: { metadata?: Meta, ack?: Ack }) => bidiSignature<fn, Context<Meta>>
+    ? <Meta extends z.ZodObject<any> | undefined, Ack extends boolean = false>(context: {
+          metadata?: Meta;
+          ack?: Ack;
+      }) => bidiSignature<fn, Context<Meta>>
     : fn) & {
     [ScopeTag]: "bidi";
 };

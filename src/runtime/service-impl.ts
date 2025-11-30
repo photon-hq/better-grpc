@@ -64,13 +64,13 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
                         try {
                             for await (const message of incomingStream) {
                                 const [id, value] = decodeResponseMessage(message);
-                                
+
                                 if (id && descriptor.config?.ack && value === undefined) {
                                     grpcServer.pendingBidiAck.get(id)?.();
                                 } else {
                                     inStream.push(value ?? []);
                                     if (id && descriptor.config?.ack) {
-                                        outStream.push(encodeRequestMessage(id, undefined))
+                                        outStream.push(encodeRequestMessage(id, undefined));
                                     }
                                 }
                             }
