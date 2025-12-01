@@ -67,6 +67,7 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
 
                                 if (id && descriptor.config?.ack && value === undefined) {
                                     grpcServer.pendingBidiAck.get(id)?.();
+                                    grpcServer.pendingBidiAck.delete(id);
                                 } else {
                                     inStream.push(value ?? []);
                                     if (id && descriptor.config?.ack) {

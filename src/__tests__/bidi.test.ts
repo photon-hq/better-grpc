@@ -117,15 +117,15 @@ describe("bidi test", async () => {
 
         const serverPromise = (async () => {
             await grpcServer.BidiTestService.bidiFn1("hello");
-            order.push("client_done");
+            order.push("server_done");
         })();
 
         const clientResult = await getResult(grpcClient.BidiTestService.bidiFn1);
-        order.push("server_received");
+        order.push("client_received");
 
         await serverPromise;
 
         expect(clientResult[0][0]).toBe("hello");
-        expect(order).toEqual(["client_done", "server_received"]);
+        expect(order).toEqual(["server_done", "client_received"]);
     });
 });

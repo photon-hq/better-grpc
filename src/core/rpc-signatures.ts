@@ -1,5 +1,4 @@
 import type { z } from "zod";
-import { fa } from "zod/locales";
 import type { Context, ContextRequiredFn, DefaultContext, PrependContext } from "./context";
 
 export declare const ScopeTag: unique symbol;

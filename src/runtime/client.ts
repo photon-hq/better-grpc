@@ -120,10 +120,10 @@ export class GrpcClient {
                                         const [id, value] = decodeRequestMessage(message);
                                         if (id && descriptor.config?.ack && value === undefined) {
                                             this.pendingBidiAck.get(id)?.();
+                                            this.pendingBidiAck.delete(id);
                                         } else {
                                             inStream.push(value ?? []);
                                             if (id && descriptor.config?.ack) {
-                                                console.log("send ack");
                                                 outStream.push(encodeRequestMessage(id, undefined));
                                             }
                                         }
