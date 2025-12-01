@@ -21,6 +21,8 @@ export class GrpcServer {
     contexts = new Map<string, Context<any>>();
     pendingContext = new Map<string, (value: Context<any>) => void>();
 
+    pendingBidiAck = new Map<string, () => void>();
+
     constructor(address: string, serviceImpls: ServiceImpl<any, "server">[]) {
         this.address = address;
         this.serviceImpls = serviceImpls;
@@ -114,7 +116,6 @@ export class GrpcServer {
 
                             yield* inStream;
                         }
-                        const iterator = generator(this);
 
                         const emitFn = async (...args: any[]): Promise<void> => {
                             const outStream = await this.getStream(
@@ -122,7 +123,15 @@ export class GrpcServer {
                                 name.toUpperCase(),
                             );
 
-                            outStream.push(encodeRequestMessage(undefined, args));
+                            const ackId = descriptor.config?.ack ? crypto.randomUUID() : undefined;
+
+                            outStream.push(encodeRequestMessage(ackId, args));
+
+                            if (ackId) {
+                                return new Promise((resolve) => {
+                                    this.pendingBidiAck.set(ackId, resolve);
+                                });
+                            }
                         };
 
                         const context = {
@@ -130,10 +139,14 @@ export class GrpcServer {
                         };
 
                         const hybrid = Object.assign(emitFn, {
-                            next: iterator.next.bind(iterator),
-                            return: iterator.return.bind(iterator),
-                            throw: iterator.throw.bind(iterator),
-                            [Symbol.asyncIterator]: () => hybrid, // Return the hybrid itself
+                            [Symbol.asyncIterator]: () => {
+                                const iterator = generator(this);
+                                return {
+                                    next: iterator.next.bind(iterator),
+                                    return: iterator.return.bind(iterator),
+                                    throw: iterator.throw.bind(iterator),
+                                };
+                            },
                         });
 
                         Object.assign(hybrid, context);

@@ -20,6 +20,7 @@ export class GrpcClient {
     pushableStreams: Record<string, Record<string, Pushable<any>>> = {};
     pendingStreams = new Map<string, (value: Pushable<any>) => void>();
     pendingBidi = new Map<string, (context: Context<any>) => void>(); // bidi that is waiting for context
+    pendingBidiAck = new Map<string, () => void>();
 
     constructor(address: string, serviceImpls: ServiceImpl<any, "client">[]) {
         this.address = address;
@@ -87,7 +88,7 @@ export class GrpcClient {
                             try {
                                 for await (const message of incomingMessages) {
                                     const [id, value] = decodeRequestMessage(message);
-                                    const responseValue = await serviceImpl.implementation[name](...value);
+                                    const responseValue = await serviceImpl.implementation[name](...(value ?? []));
                                     incomingStream.push(encodeResponseMessage(id, responseValue));
                                 }
                             } finally {
@@ -116,8 +117,16 @@ export class GrpcClient {
                             (async () => {
                                 try {
                                     for await (const message of incomingMessages) {
-                                        const [_, value] = decodeRequestMessage(message);
-                                        inStream.push(value);
+                                        const [id, value] = decodeRequestMessage(message);
+                                        if (id && descriptor.config?.ack && value === undefined) {
+                                            this.pendingBidiAck.get(id)?.();
+                                            this.pendingBidiAck.delete(id);
+                                        } else {
+                                            inStream.push(value ?? []);
+                                            if (id && descriptor.config?.ack) {
+                                                outStream.push(encodeRequestMessage(id, undefined));
+                                            }
+                                        }
                                     }
                                 } finally {
                                     inStream.end();
@@ -126,7 +135,7 @@ export class GrpcClient {
                             })();
                         };
 
-                        if (descriptor.context) {
+                        if (descriptor.config?.metadata) {
                             (async () => {
                                 const context = await new Promise((resolve) => {
                                     this.pendingBidi.set(`${serviceImpl.serviceClass.serviceName}.${name}`, resolve);
@@ -152,7 +161,7 @@ export class GrpcClient {
             for (const [name, descriptor] of Object.entries(serviceImpl.methods())) {
                 switch (`${descriptor.serviceType}:${descriptor.methodType}`) {
                     case "server:unary": {
-                        if (descriptor.context?.metadata) {
+                        if (descriptor.config?.metadata) {
                             (serviceCallableInstance as any)[name] = (...args: any[]) => {
                                 return {
                                     withMeta: async (metadata: any) => {
@@ -186,7 +195,6 @@ export class GrpcClient {
 
                             yield* inStream;
                         }
-                        const iterator = generator(this);
 
                         const emitFn = async (...args: any[]): Promise<void> => {
                             const outStream = await this.getStream(
@@ -194,7 +202,15 @@ export class GrpcClient {
                                 name.toUpperCase(),
                             );
 
-                            outStream.push(encodeRequestMessage(undefined, args));
+                            const ackId = descriptor.config?.ack ? crypto.randomUUID() : undefined;
+
+                            outStream.push(encodeRequestMessage(ackId, args));
+
+                            if (ackId) {
+                                return new Promise((resolve) => {
+                                    this.pendingBidiAck.set(ackId, resolve);
+                                });
+                            }
                         };
 
                         const context = {
@@ -208,10 +224,14 @@ export class GrpcClient {
                         };
 
                         const hybrid = Object.assign(emitFn, {
-                            next: iterator.next.bind(iterator),
-                            return: iterator.return.bind(iterator),
-                            throw: iterator.throw.bind(iterator),
-                            [Symbol.asyncIterator]: () => hybrid, // Return the hybrid itself
+                            [Symbol.asyncIterator]: () => {
+                                const iterator = generator(this);
+                                return {
+                                    next: iterator.next.bind(iterator),
+                                    return: iterator.return.bind(iterator),
+                                    throw: iterator.throw.bind(iterator),
+                                };
+                            },
                         });
 
                         Object.assign(hybrid, context);
