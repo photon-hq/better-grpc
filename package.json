@@ -1,6 +1,6 @@
 {
     "name": "better-grpc",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "Simple, typed gRPC for TypeScript",
     "author": "Photon AI",
     "license": "MIT",
@@ -50,6 +50,7 @@
     },
     "devDependencies": {
         "@biomejs/biome": "^2.3.7",
+        "@octokit/rest": "^22.0.1",
         "@types/bun": "latest",
         "tsup": "^8.5.1"
     },
