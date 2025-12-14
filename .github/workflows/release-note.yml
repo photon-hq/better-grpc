@@ -43,14 +43,7 @@ jobs:
 
                       const body = `@copilot Carefuelly reviewed the code change and commit from v${oldVersion} to v${newVersion}. After understand the changes between the versions, generate a release note under`;
 
-                      if (botComment) {
-                          await github.rest.issues.updateComment({
-                              owner: context.repo.owner,
-                              repo: context.repo.repo,
-                              comment_id: botComment.id,
-                              body
-                          });
-                      } else {
+                      if (!botComment) {
                           await github.rest.issues.createComment({
                               owner: context.repo.owner,
                               repo: context.repo.repo,
