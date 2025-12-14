@@ -13,6 +13,8 @@ jobs:
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
             - name: Check if version changed
               id: version-check
               uses: EndBug/version-check@v2
@@ -36,10 +38,10 @@ jobs:
                       });
 
                       const botComment = comments.data.find(c =>
-                          c.user.type === 'Bot' && c.body.includes('Version Update Detected')
+                          c.user.type === 'Bot'
                       );
 
-                      const body = `## 🚀 Version Update Detected!\n\nThis PR includes a **${changeType}** version bump:\n\n| Previous Version | New Version |\n|-----------------|-------------|\n| \`${oldVersion}\` | \`${newVersion}\` |\n\n✅ Ready for release after merge.`;
+                      const body = `@copilot Carefuelly reviewed the code change and commit from v${oldVersion} to v${newVersion}. After understand the changes between the versions, generate a release note under`;
 
                       if (botComment) {
                           await github.rest.issues.updateComment({
