@@ -25,7 +25,7 @@ jobs:
                   file-name: package.json
             - name: Last Release Sha
               id: last-release
-              if: steps.version-check.outputs.version-changed == 'true'
+              if: steps.version-check.outputs.changed == 'true'
               uses: actions/github-script@v7
               with:
                   script: |
@@ -52,14 +52,15 @@ jobs:
                       }
             - name: Run Codex
               id: run_codex
-              if: steps.version-check.outputs.version-changed == 'true'
+              if: steps.version-check.outputs.changed == 'true'
               uses: openai/codex-action@v1
               with:
                   openai-api-key: ${{ secrets.OPENAI_API_KEY }}
                   prompt: |
-                      Generate a release note in markdown format for the changes between two version:
+                      Generate a comprehensive release note in markdown format for the changes between two versions:
                         - Current Version Head: ${{ github.sha }}
                         - Last Version: ${{ steps.last-release.outputs.sha }}
+                        - Current Version Number: ${{ steps.get-version.outputs.version }}
     release:
         name: Create Release
         runs-on: ubuntu-latest
