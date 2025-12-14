@@ -33,7 +33,7 @@ jobs:
               uses: actions/github-script@v7
               with:
                   script: |
-                      const oldVersion = '${{ steps.version-check.outputs.old_version }}';
+                      const oldVersion = '${{ steps.old-version.outputs.version }}';
                       const newVersion = '${{ steps.version-check.outputs.version }}';
                       const changeType = '${{ steps.version-check.outputs.type }}';
 
@@ -48,7 +48,7 @@ jobs:
                           c.user.type === 'Bot'
                       );
 
-                      const body = `@copilot Carefuelly reviewed the code change and commit from v${oldVersion} to v${newVersion}. After understand the changes between the versions, generate a release note under`;
+                      const body = `@copilot Carefuelly reviewed the code change and commit from v${oldVersion} to v${newVersion}. After understand the changes between the versions, generate a release note under \`.github/release-notes/${newVersion}.json\`. The format should be in JSON format, with two fields, \`title\` and \`body\`. The \`title\` field should be a string, and the \`body\` field should also be string but can have markdown formatting.`;
 
                       if (botComment) {
                           await github.rest.issues.updateComment({
