@@ -12,9 +12,9 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![Discord](https://img.shields.io/badge/Discord-Join-5865F2.svg?logo=discord&logoColor=white)](https://discord.gg/bZd4CMd2H5)
 
-**`better-grpc`** is a library that provides a new way to define and use RPC services in TypeScript, focusing on developer experience and type safety. It eliminates the need for `.proto` files and code generation, allowing you to define your services entirely in TypeScript.
+**`better-grpc`** is a TypeScript-first gRPC library that focuses on developer experience and type safety. It eliminates the need for `.proto` files and code generation, allowing you to define your services entirely in TypeScript.
 
-The core idea is to enable seamless communication between a client and a server, allowing you to call server-side functions from the client and client-side functions from the server, as if they were local.
+It enables seamless, **bidirectional** communication between a client and a server, allowing developers to call server-side functions from the client and client-side functions from the server, as if they were local.
 
 ## Features
 
