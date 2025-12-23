@@ -13,10 +13,18 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
             case "server:unary":
                 (grpcImpl as any)[name.toUpperCase()] = async (req: any, ctx: any) => {
                     const [_, value] = decodeRequestMessage(req);
-                    const args = descriptor.config?.metadata
-                        ? [{ metadata: decodeMetadata(ctx.metadata) }, ...(value ?? [])]
-                        : (value ?? []);
-                    const result = await serviceImpl.implementation[name](...args);
+                    const impl = serviceImpl.implementation[name];
+                    
+                    if (!impl) {
+                        throw new Error(`Method ${name} not found`);
+                    }
+                    
+                    let result = await impl(...(value ?? []));
+            
+                    if (typeof result === 'function') {
+                        result = await result({ metadata: decodeMetadata(ctx.metadata) })
+                    }
+                    
                     return encodeResponseMessage(undefined, result);
                 };
                 break;

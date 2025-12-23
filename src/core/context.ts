@@ -4,7 +4,7 @@ export type Context<Meta extends z.ZodObject<any> | undefined> = {
     metadata: Meta extends z.ZodObject<any> ? z.infer<Meta> : undefined;
 };
 
-export type PrependContext<C extends Context<any>, Args extends any[]> = [C, ...Args];
+export type BuildContextFn<C extends Context<any>, F extends (...args: any[]) => any> = ((...args: Parameters<F>) => (context: C) => ReturnType<F>) | ((...args: Parameters<F>) => ReturnType<F>);
 
 export type DefaultContext = Context<undefined>;
 

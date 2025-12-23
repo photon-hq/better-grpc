@@ -1,5 +1,6 @@
+import type { Build } from "bun";
 import type { z } from "zod";
-import type { Context, ContextRequiredFn, DefaultContext, PrependContext } from "./context";
+import type { BuildContextFn, Context, ContextRequiredFn, DefaultContext } from "./context";
 
 export declare const ScopeTag: unique symbol;
 export declare const ContextTag: unique symbol;
@@ -97,7 +98,7 @@ type Unwrap<T, type extends "server" | "client", ContextChain extends boolean = 
         ? F
         : ContextChain extends true
           ? ContextRequiredFn<F, C>
-          : (...args: PrependContext<C, Parameters<F>>) => ReturnType<F>
+          : BuildContextFn<C, F>
     : T extends clientSignature<infer F>
       ? F
       : T extends bidiSignature<infer F, infer C>
