@@ -150,11 +150,11 @@ abstract class GreeterService extends Service('GreeterService') {
 }
 ```
 
-Server implementations receive the typed metadata as the first argument:
+Server implementations can optionally return a context-aware function. The outer function receives the request args, and the returned function receives the typed context:
 
 ```typescript
 const GreeterServerImpl = GreeterService.Server({
-    async greet(context, name) {
+    greet: (name) => async (context) => {
         console.log('Request', context.metadata.requestId);
         return `Hello, ${name}!`;
     },
@@ -200,7 +200,7 @@ A factory function that creates an abstract service class.
 
 - `server<T>()`
 
-Defines a server-side unary function signature. `T` should be a function type. Call the returned descriptor with `({ metadata: z.object({...}) })` to require typed metadata for that RPC. Client code then calls `client.MyService.fn(...args).withMeta({...})`, and server handlers receive the context object as the first argument.
+Defines a server-side unary function signature. `T` should be a function type. Call the returned descriptor with `({ metadata: z.object({...}) })` to require typed metadata for that RPC. Client code then calls `client.MyService.fn(...args).withMeta({...})`, and server handlers can return a function to receive the context (or just return a value if they don't need it).
 
 - `client<T>()`
 
