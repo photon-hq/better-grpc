@@ -29,7 +29,7 @@ export class GrpcClient {
 
         const useSSL = !address.includes("localhost") && !address.includes("127.0.0.1") && !address.includes("0.0.0.0");
 
-        const credentials = useSSL ? ChannelCredentials.createSsl() : grpc.credentials.createInsecure();
+        const credentials = useSSL ? ChannelCredentials.createSsl() : ChannelCredentials.createInsecure();
 
         this.channel = createChannel(address, credentials, {
             "grpc.max_receive_message_length": 10 * 1024 * 1024,
