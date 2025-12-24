@@ -9,6 +9,7 @@ import { encodeMetadata } from "./metadata";
 import { buildProtoString } from "./proto-builder";
 
 export class GrpcClient {
+    readonly clientId: string;
     readonly address: string;
     readonly serviceImpls: ServiceImpl<any, "client">[];
     readonly channel: Channel;
@@ -23,6 +24,7 @@ export class GrpcClient {
     pendingBidiAck = new Map<string, () => void>();
 
     constructor(address: string, serviceImpls: ServiceImpl<any, "client">[]) {
+        this.clientId = crypto.randomUUID();
         this.address = address;
         this.serviceImpls = serviceImpls;
         this.proto = loadProtoFromString(buildProtoString(serviceImpls));
