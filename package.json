@@ -1,6 +1,6 @@
 {
     "name": "better-grpc",
-    "version": "0.2.4",
+    "version": "0.2.5",
     "description": "Simple, typed gRPC for TypeScript",
     "author": "Photon AI",
     "license": "MIT",
