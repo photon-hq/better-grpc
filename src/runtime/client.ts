@@ -1,5 +1,6 @@
 import * as grpc from "@grpc/grpc-js";
 import { type Pushable, pushable } from "it-pushable";
+import type { ChannelOptions } from "nice-grpc";
 import { type Channel, ChannelCredentials, type ClientFactory, createChannel, createClientFactory } from "nice-grpc";
 import type { Context } from "../core/context";
 import type { ServiceImpl } from "../core/service";
@@ -7,7 +8,6 @@ import { loadProtoFromString } from "../utils/proto-loader";
 import { decodeRequestMessage, decodeResponseMessage, encodeRequestMessage, encodeResponseMessage } from "./message";
 import { encodeMetadata } from "./metadata";
 import { buildProtoString } from "./proto-builder";
-import type { ChannelOptions } from "nice-grpc";
 
 export class GrpcClient {
     readonly address: string;
