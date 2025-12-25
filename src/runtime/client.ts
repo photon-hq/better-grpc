@@ -7,6 +7,7 @@ import { loadProtoFromString } from "../utils/proto-loader";
 import { decodeRequestMessage, decodeResponseMessage, encodeRequestMessage, encodeResponseMessage } from "./message";
 import { encodeMetadata } from "./metadata";
 import { buildProtoString } from "./proto-builder";
+import type { ChannelOptions } from "nice-grpc";
 
 export class GrpcClient {
     readonly address: string;
@@ -22,7 +23,7 @@ export class GrpcClient {
     pendingBidi = new Map<string, (context: Context<any>) => void>(); // bidi that is waiting for context
     pendingBidiAck = new Map<string, () => void>();
 
-    constructor(address: string, serviceImpls: ServiceImpl<any, "client">[]) {
+    constructor(address: string, grpcOptions: ChannelOptions, serviceImpls: ServiceImpl<any, "client">[]) {
         this.address = address;
         this.serviceImpls = serviceImpls;
         this.proto = loadProtoFromString(buildProtoString(serviceImpls));
@@ -31,13 +32,7 @@ export class GrpcClient {
 
         const credentials = useSSL ? ChannelCredentials.createSsl() : ChannelCredentials.createInsecure();
 
-        this.channel = createChannel(address, credentials, {
-            "grpc.max_receive_message_length": 10 * 1024 * 1024,
-            "grpc.max_send_message_length": 10 * 1024 * 1024,
-            "grpc.keepalive_time_ms": 30000,
-            "grpc.keepalive_timeout_ms": 10000,
-            "grpc.keepalive_permit_without_calls": 1,
-        });
+        this.channel = createChannel(address, credentials, grpcOptions);
 
         this.clientFactory = createClientFactory();
     }
