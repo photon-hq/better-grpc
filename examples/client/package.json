@@ -1,0 +1,14 @@
+{
+  "name": "client",
+  "module": "src/index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "better-grpc": "file:../.."
+  }
+}
