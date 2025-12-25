@@ -1,4 +1,4 @@
-import { createGrpcClient } from "../../../dist";
+import { createGrpcClient } from "better-grpc";
 import { impl } from "./impl";
 
 const grpcClient = await createGrpcClient("0.0.0.0:50051", impl);

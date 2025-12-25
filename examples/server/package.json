@@ -7,8 +7,5 @@
   },
   "peerDependencies": {
     "typescript": "^5"
-  },
-  "dependencies": {
-    "better-grpc": "file:../.."
   }
 }

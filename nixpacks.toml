@@ -4,7 +4,7 @@ nixPkgs = ["bun"]
 [phases.install]
 cmds = [
     "bun install",
-    "cd ./examples/server && bun install"
+    "cd examples/server && bun install"
 ]
 
 [phases.build]
