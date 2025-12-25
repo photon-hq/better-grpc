@@ -95,6 +95,21 @@ import { createGrpcClient } from 'better-grpc';
 const client = await createGrpcClient('localhost:50051', myClientImpl);
 ```
 
+You can also override gRPC channel options (defaults are exported as `DEFAULT_OPTIONS`):
+
+```typescript
+import { createGrpcClient, DEFAULT_OPTIONS } from 'better-grpc';
+
+const client = await createGrpcClient(
+    'localhost:50051',
+    {
+        ...DEFAULT_OPTIONS,
+        'grpc.keepalive_time_ms': 15000,
+    },
+    myClientImpl
+);
+```
+
 ### 5. Make remote calls
 
 Now you can call remote functions from both the client and the server.
@@ -216,7 +231,11 @@ Creates and starts a gRPC server.
 
 - `createGrpcClient(address: string, ...services: ServiceImpl[])`
 
-Creates and starts a gRPC client.
+Creates and starts a gRPC client using `DEFAULT_OPTIONS`.
+
+- `createGrpcClient(address: string, options: ChannelOptions, ...services: ServiceImpl[])`
+
+Creates and starts a gRPC client with custom gRPC channel options. `DEFAULT_OPTIONS` is exported for easy overrides.
 
 ## Benchmarks
 
