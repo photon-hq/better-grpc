@@ -15,6 +15,8 @@ let count = 0;
             console.log(`Received unexpected count: ${newCount}`)
         }
     }
+    
+    console.log(`Bidi end with checkpoint count: ${count}`)
 })();
 
 await grpcClient.ExampleService.bidiFn1(count)
