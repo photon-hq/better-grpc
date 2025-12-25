@@ -26,5 +26,6 @@
         "noUnusedParameters": false,
         "noPropertyAccessFromIndexSignature": false,
         "experimentalDecorators": true
-    }
+    },
+    "exclude": ["examples", "dist", "node_modules"]
 }
