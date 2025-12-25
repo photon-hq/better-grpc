@@ -1,8 +1,9 @@
 [phases.setup]
 nixPkgs = ["bun"]
 
-[phases.install]
+[phases.build]
 cmds = [
+    "cd ../.. && bun install && bun run build",
     "bun install"
 ]
 
