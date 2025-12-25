@@ -237,6 +237,23 @@ Creates and starts a gRPC client using `DEFAULT_OPTIONS`.
 
 Creates and starts a gRPC client with custom gRPC channel options. `DEFAULT_OPTIONS` is exported for easy overrides.
 
+## Deployment
+
+If you deploy behind Traefik (including Dokploy), make sure the **entrypoint** timeouts allow long-lived HTTP/2 streams. Otherwise, bidi streams can be cancelled around the default timeout window.
+
+This is a static Traefik setting (not the dynamic `http:` config). Add this to your Traefik config and reload:
+
+```yaml
+entryPoints:
+  websecure:
+    address: :443
+    transport:
+      respondingTimeouts:
+        readTimeout: 0s
+        writeTimeout: 0s
+        idleTimeout: 0s
+```
+
 ## Benchmarks
 
 ### Simple "Hello World"
