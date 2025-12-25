@@ -7,7 +7,7 @@ export const DEFAULT_OPTIONS: ChannelOptions = {
     "grpc.max_send_message_length": 5000,
     "grpc.keepalive_time_ms": 30000,
     "grpc.keepalive_timeout_ms": 10000,
-    "grpc.keepalive_permit_without_calls": 1
+    "grpc.keepalive_permit_without_calls": 1,
 };
 
 export async function createGrpcClient<T extends ServiceImpl<any, "client">[]>(
