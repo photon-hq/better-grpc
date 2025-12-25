@@ -12,9 +12,9 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 [![Discord](https://img.shields.io/badge/Discord-Join-5865F2.svg?logo=discord&logoColor=white)](https://discord.gg/bZd4CMd2H5)
 
-**`better-grpc`** is a library that provides a new way to define and use RPC services in TypeScript, focusing on developer experience and type safety. It eliminates the need for `.proto` files and code generation, allowing you to define your services entirely in TypeScript.
+**`better-grpc`** is a TypeScript-first gRPC library that focuses on developer experience and type safety. It eliminates the need for `.proto` files and code generation, allowing you to define your services entirely in TypeScript.
 
-The core idea is to enable seamless communication between a client and a server, allowing you to call server-side functions from the client and client-side functions from the server, as if they were local.
+It enables seamless, **bidirectional** communication between a client and a server, allowing developers to call server-side functions from the client and client-side functions from the server, as if they were local.
 
 ## Features
 
@@ -93,6 +93,21 @@ Create a client for your service.
 import { createGrpcClient } from 'better-grpc';
 
 const client = await createGrpcClient('localhost:50051', myClientImpl);
+```
+
+You can also override gRPC channel options (defaults are exported as `DEFAULT_OPTIONS`):
+
+```typescript
+import { createGrpcClient, DEFAULT_OPTIONS } from 'better-grpc';
+
+const client = await createGrpcClient(
+    'localhost:50051',
+    {
+        ...DEFAULT_OPTIONS,
+        'grpc.keepalive_time_ms': 15000,
+    },
+    myClientImpl
+);
 ```
 
 ### 5. Make remote calls
@@ -216,7 +231,28 @@ Creates and starts a gRPC server.
 
 - `createGrpcClient(address: string, ...services: ServiceImpl[])`
 
-Creates and starts a gRPC client.
+Creates and starts a gRPC client using `DEFAULT_OPTIONS`.
+
+- `createGrpcClient(address: string, options: ChannelOptions, ...services: ServiceImpl[])`
+
+Creates and starts a gRPC client with custom gRPC channel options. `DEFAULT_OPTIONS` is exported for easy overrides.
+
+## Deployment
+
+If you deploy behind Traefik (including Dokploy), make sure the **entrypoint** timeouts allow long-lived HTTP/2 streams. Otherwise, bidi streams can be cancelled around the default timeout window.
+
+This is a static Traefik setting (not the dynamic `http:` config). Add this to your Traefik config and reload:
+
+```yaml
+entryPoints:
+  websecure:
+    address: :443
+    transport:
+      respondingTimeouts:
+        readTimeout: 0s
+        writeTimeout: 0s
+        idleTimeout: 0s
+```
 
 ## Benchmarks
 

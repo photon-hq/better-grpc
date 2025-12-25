@@ -1,5 +1,6 @@
 import * as grpc from "@grpc/grpc-js";
 import { type Pushable, pushable } from "it-pushable";
+import type { ChannelOptions } from "nice-grpc";
 import { type Channel, ChannelCredentials, type ClientFactory, createChannel, createClientFactory } from "nice-grpc";
 import type { Context } from "../core/context";
 import type { ServiceImpl } from "../core/service";
@@ -22,8 +23,8 @@ export class GrpcClient {
     pendingStreams = new Map<string, (value: Pushable<any>) => void>();
     pendingBidi = new Map<string, (context: Context<any>) => void>(); // bidi that is waiting for context
     pendingBidiAck = new Map<string, () => void>();
-
-    constructor(address: string, serviceImpls: ServiceImpl<any, "client">[]) {
+        
+    constructor(address: string, grpcOptions: ChannelOptions, serviceImpls: ServiceImpl<any, "client">[]) {
         this.clientId = crypto.randomUUID();
         this.address = address;
         this.serviceImpls = serviceImpls;
@@ -33,13 +34,7 @@ export class GrpcClient {
 
         const credentials = useSSL ? ChannelCredentials.createSsl() : ChannelCredentials.createInsecure();
 
-        this.channel = createChannel(address, credentials, {
-            "grpc.max_receive_message_length": 10 * 1024 * 1024,
-            "grpc.max_send_message_length": 10 * 1024 * 1024,
-            "grpc.keepalive_time_ms": 30000,
-            "grpc.keepalive_timeout_ms": 10000,
-            "grpc.keepalive_permit_without_calls": 1,
-        });
+        this.channel = createChannel(address, credentials, grpcOptions);
 
         this.clientFactory = createClientFactory();
     }

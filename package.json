@@ -1,6 +1,6 @@
 {
     "name": "better-grpc",
-    "version": "0.2.2",
+    "version": "0.2.5",
     "description": "Simple, typed gRPC for TypeScript",
     "author": "Photon AI",
     "license": "MIT",
@@ -13,14 +13,13 @@
         "access": "public"
     },
     "type": "module",
-    "main": "./dist/index.cjs",
+    "main": "./dist/index.js",
     "module": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "exports": {
         ".": {
             "types": "./dist/index.d.ts",
-            "import": "./dist/index.js",
-            "require": "./dist/index.cjs"
+            "import": "./dist/index.js"
         }
     },
     "files": [
