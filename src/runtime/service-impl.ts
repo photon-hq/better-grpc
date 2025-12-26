@@ -61,6 +61,8 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
                     const metadata = decodeMetadata(ctx.metadata);
                     const clientID = metadata.BETTER_GRPC_CLIENT_ID as string
                     
+                    grpcServer.clients.push(clientID);
+                    
                     grpcServer.setContext(serviceImpl.serviceClass.serviceName, name, {
                         metadata: metadata,
                         client: { id: clientID },
@@ -69,8 +71,8 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
                     const outStream = pushable<any>({ objectMode: true });
                     const inStream = pushable<any>({ objectMode: true });
 
-                    grpcServer.setStream(`${serviceImpl.serviceClass.serviceName}_OUT`, name, outStream);
-                    grpcServer.setStream(`${serviceImpl.serviceClass.serviceName}_IN`, name, inStream);
+                    grpcServer.setStream(`${serviceImpl.serviceClass.serviceName}_${clientID}_OUT`, name, outStream);
+                    grpcServer.setStream(`${serviceImpl.serviceClass.serviceName}_${clientID}_IN`, name, inStream);
 
                     (async () => {
                         try {

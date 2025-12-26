@@ -22,6 +22,8 @@ export class GrpcServer {
     pendingContext = new Map<string, (value: Context<any>) => void>();
 
     pendingBidiAck = new Map<string, () => void>();
+    
+    clients: string[] = [];
 
     constructor(address: string, serviceImpls: ServiceImpl<any, "server">[]) {
         this.address = address;
@@ -110,7 +112,7 @@ export class GrpcServer {
                     case "bidi:bidi": {
                         async function* generator(server: GrpcServer) {
                             const inStream = await server.getStream(
-                                `${serviceImpl.serviceClass.serviceName}_IN`,
+                                `${serviceImpl.serviceClass.serviceName}_${server.clients[0]}_IN`,
                                 name.toUpperCase(),
                             );
 
@@ -119,7 +121,7 @@ export class GrpcServer {
 
                         const emitFn = async (...args: any[]): Promise<void> => {
                             const outStream = await this.getStream(
-                                `${serviceImpl.serviceClass.serviceName}_OUT`,
+                                `${serviceImpl.serviceClass.serviceName}_${this.clients[0]}_OUT`,
                                 name.toUpperCase(),
                             );
 
