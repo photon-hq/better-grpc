@@ -17,7 +17,7 @@ export function server<fn extends (...args: any[]) => ValidReturnType<fn>>(): Se
 }
 
 export type ServerImpls<T> = {
-    [K in keyof T as T[K] extends BaseSignature<"server", any, any> | BaseSignature<"bidi", any, any>
+    [K in keyof T as T[K] extends BaseSignature<"server", any, any>
         ? K
         : never]: T[K] extends AnyBaseSignature ? ExtractImplFn<T[K]> : never;
 };

@@ -12,7 +12,7 @@ export function client<fn extends (...args: any[]) => ValidReturnType<fn>>(): Cl
 }
 
 export type ClientImpls<T> = {
-    [K in keyof T as T[K] extends BaseSignature<"client", any, any> | BaseSignature<"bidi", any, any>
+    [K in keyof T as T[K] extends BaseSignature<"client", any, any>
         ? K
         : never]: T[K] extends AnyBaseSignature ? ExtractImplFn<T[K]> : never;
 };
