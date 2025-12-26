@@ -47,7 +47,7 @@ type CallableChain<fn extends (...args: any[]) => any, C extends AnyContext | un
         : ReturnType<fn>
     : ReturnType<fn>;
 
-type BidiCallable<S extends BaseSignature<"bidi", any, any>, C extends AnyContext | undefined> = C extends Context<
+type BidiCallable<S extends BaseSignature<"bidi", any, any>, C extends AnyContext | undefined> = (C extends Context<
     infer Meta
 >
     ? Meta extends z.ZodObject<any>
@@ -55,4 +55,5 @@ type BidiCallable<S extends BaseSignature<"bidi", any, any>, C extends AnyContex
               context(context: { metadata: z.infer<Meta> }): Promise<void>;
           } & ExtractFn<S>
         : ExtractFn<S>
-    : ExtractFn<S>;
+    : ExtractFn<S>) &
+    AsyncGenerator<Parameters<ExtractFn<S>>, void, unknown>;

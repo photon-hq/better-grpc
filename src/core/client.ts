@@ -1,4 +1,3 @@
-import type z from "zod";
 import type { AnyBaseSignature, BaseSignature, ExtractFn, ExtractImplFn, ValidReturnType } from "./base";
 import type { AnyContext, Context } from "./context";
 
@@ -31,4 +30,4 @@ export type ClientCallable<T> = {
 
 type BidiCallable<S extends BaseSignature<"bidi", any, any>, C extends AnyContext | undefined> = ExtractFn<S> & {
     context: Promise<C>;
-};
+} & AsyncGenerator<Parameters<ExtractFn<S>>, void, unknown>;

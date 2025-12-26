@@ -14,17 +14,17 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
                 (grpcImpl as any)[name.toUpperCase()] = async (req: any, ctx: any) => {
                     const [_, value] = decodeRequestMessage(req);
                     const impl = serviceImpl.implementation[name];
-                    
+
                     if (!impl) {
                         throw new Error(`Method ${name} not found`);
                     }
-                    
+
                     let result = await impl(...(value ?? []));
-            
-                    if (typeof result === 'function') {
-                        result = await result({ metadata: decodeMetadata(ctx.metadata) })
+
+                    if (typeof result === "function") {
+                        result = await result({ metadata: decodeMetadata(ctx.metadata) });
                     }
-                    
+
                     return encodeResponseMessage(undefined, result);
                 };
                 break;
@@ -59,6 +59,7 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
                     if (descriptor.config?.metadata) {
                         grpcServer.setContext(serviceImpl.serviceClass.serviceName, name, {
                             metadata: decodeMetadata(ctx.metadata),
+                            client: { id: decodeMetadata(ctx.metadata).BETTER_GRPC_CLIENT_ID as string },
                         });
                     }
 
