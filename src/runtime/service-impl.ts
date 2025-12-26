@@ -61,7 +61,10 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
                     const metadata = decodeMetadata(ctx.metadata);
                     const clientID = metadata.BETTER_GRPC_CLIENT_ID as string
                     
-                    grpcServer.clients.push(clientID);
+                    // set default client ID if not set
+                    if (!grpcServer.defaultClientID) {
+                        grpcServer.setDefaultClient(clientID);
+                    }
                     
                     grpcServer.setContext(serviceImpl.serviceClass.serviceName, name, {
                         metadata: metadata,
