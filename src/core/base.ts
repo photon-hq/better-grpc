@@ -14,7 +14,7 @@ export type BaseSignature<
 > = {
     [ScopeTag]: type;
     [FunctionTag]: fn;
-    [ContextTag]: C;
+    [ContextTag]: type extends "server" ? (C extends undefined ? Context<undefined> : C) : C;
 };
 
 type AnyBaseSignature = BaseSignature<any, any, any>;
