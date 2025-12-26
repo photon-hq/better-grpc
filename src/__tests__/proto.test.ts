@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { GrpcObject, ServiceClientConstructor, ServiceDefinition } from "@grpc/grpc-js";
-import { client, type clientSignature, server, type serverSignature } from "../core/base";
+import { client, server } from "../core";
 import { Service } from "../core/service";
 import { buildProtoString, buildServiceProto } from "../runtime/proto-builder";
 import { loadProtoFromString } from "../utils/proto-loader";

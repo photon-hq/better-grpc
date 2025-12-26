@@ -1,4 +1,8 @@
-export declare const ServiceNameTag: unique symbol;./base
+import type { RpcMethodDescriptor } from "./base";
+import type { ClientCallable, ClientImpls } from "./client";
+import type { ServerCallable, ServerImpls } from "./server";
+
+export declare const ServiceNameTag: unique symbol;
 
 export interface ServiceInstance<N extends string = string> {
     readonly [ServiceNameTag]: N;
@@ -37,7 +41,7 @@ export function Service<N extends string>(name: N) {
     abstract class BaseService {
         static serviceName = name;
 
-        static Server<T extends AbstractServiceClass, Impl extends ServerFn<InstanceType<T>, false>>(
+        static Server<T extends AbstractServiceClass, Impl extends ServerImpls<InstanceType<T>>>(
             this: T,
             implementation: Impl,
         ): ServiceImpl<T, "server"> {
@@ -45,7 +49,7 @@ export function Service<N extends string>(name: N) {
             return new ServiceImpl<T, "server">(implementation, "server", this);
         }
 
-        static Client<T extends AbstractServiceClass, Impl extends ClientFn<InstanceType<T>, false>>(
+        static Client<T extends AbstractServiceClass, Impl extends ClientImpls<InstanceType<T>>>(
             this: T,
             implementation: Impl,
         ): ServiceImpl<T, "client"> {
@@ -64,6 +68,6 @@ export type ServiceNameOf<T extends ServiceImpl<any, any>> = T extends ServiceIm
 
 export type ServiceCallable<T> = T extends ServiceImpl<infer S, infer Mode>
     ? Mode extends "server"
-        ? ClientFn<InstanceType<S>>
-        : ServerFn<InstanceType<S>, true, true>
+        ? ClientCallable<InstanceType<S>>
+        : ServerCallable<InstanceType<S>>
     : never;
