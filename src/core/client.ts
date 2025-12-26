@@ -22,5 +22,13 @@ export type ClientImpls<T> = {
 export type ClientCallable<T> = {
     [K in keyof T as T[K] extends BaseSignature<"client", any, any> | BaseSignature<"bidi", any, any>
         ? K
-        : never]: T[K] extends AnyBaseSignature ? ExtractFn<T[K]> : never;
+        : never]: T[K] extends BaseSignature<"client", any, any>
+        ? ExtractFn<T[K]>
+        : T[K] extends BaseSignature<"bidi", any, infer C>
+          ? BidiCallable<T[K], C>
+          : never;
+};
+
+type BidiCallable<S extends BaseSignature<"bidi", any, any>, C extends AnyContext | undefined> = ExtractFn<S> & {
+    context: Promise<C>;
 };
