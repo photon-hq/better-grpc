@@ -5,6 +5,7 @@ import type {
     ExtractContext,
     ExtractFn,
     ExtractImplFn,
+    RpcMethodDescriptor,
     ValidReturnType,
 } from "./base";
 import type { AnyContext, Context } from "./context";
@@ -19,7 +20,22 @@ type ServerSignature<fn extends (...args: any[]) => any, C extends AnyContext | 
         : {});
 
 export function server<fn extends (...args: any[]) => ValidReturnType<fn>>(): ServerSignature<fn, undefined> {
-    return null as any;
+    const descriptor = {
+        serviceType: "server",
+        methodType: "unary",
+    } as RpcMethodDescriptor;
+
+    const contextFn = (context: any) => {
+        descriptor.config = {
+            metadata: context.metadata !== undefined,
+            ack: false,
+        };
+        return descriptor;
+    };
+
+    Object.assign(contextFn, descriptor);
+
+    return contextFn as any;
 }
 
 export type ServerImpls<T> = {

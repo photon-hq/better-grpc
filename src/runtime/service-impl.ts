@@ -56,12 +56,15 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
                 break;
             case "bidi:bidi":
                 (grpcImpl as any)[name.toUpperCase()] = async function* (incomingStream: any, ctx: any) {
-                    if (descriptor.config?.metadata) {
-                        grpcServer.setContext(serviceImpl.serviceClass.serviceName, name, {
-                            metadata: decodeMetadata(ctx.metadata),
-                            client: { id: decodeMetadata(ctx.metadata).BETTER_GRPC_CLIENT_ID as string },
-                        });
-                    }
+                    // bidi must contain metadat
+                    
+                    const metadata = decodeMetadata(ctx.metadata);
+                    const clientID = metadata.BETTER_GRPC_CLIENT_ID as string
+                    
+                    grpcServer.setContext(serviceImpl.serviceClass.serviceName, name, {
+                        metadata: metadata,
+                        client: { id: clientID },
+                    });
 
                     const outStream = pushable<any>({ objectMode: true });
                     const inStream = pushable<any>({ objectMode: true });

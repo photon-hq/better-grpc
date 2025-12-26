@@ -10,7 +10,7 @@ import { encodeMetadata } from "./metadata";
 import { buildProtoString } from "./proto-builder";
 
 export class GrpcClient {
-    readonly clientId: string;
+    readonly clientID: string;
     readonly address: string;
     readonly serviceImpls: ServiceImpl<any, "client">[];
     readonly channel: Channel;
@@ -25,7 +25,7 @@ export class GrpcClient {
     pendingBidiAck = new Map<string, () => void>();
 
     constructor(address: string, grpcOptions: ChannelOptions, serviceImpls: ServiceImpl<any, "client">[]) {
-        this.clientId = crypto.randomUUID();
+        this.clientID = crypto.randomUUID();
         this.address = address;
         this.serviceImpls = serviceImpls;
         this.proto = loadProtoFromString(buildProtoString(serviceImpls));
@@ -106,10 +106,13 @@ export class GrpcClient {
                                 outStream,
                             );
                             this.setStream(`${serviceImpl.serviceClass.serviceName}_IN`, name.toUpperCase(), inStream);
-
-                            const incomingMessages = context
-                                ? client[name.toUpperCase()](outStream, { metadata: encodeMetadata(context.metadata) })
-                                : client[name.toUpperCase()](outStream);
+                            
+                            const incomingMessages = client[name.toUpperCase()](outStream, {
+                                metadata: encodeMetadata({
+                                    ...(context?.metadata ?? {}),
+                                    "BETTER_GRPC_CLIENT_ID": this.clientID,
+                                })
+                            });
 
                             (async () => {
                                 try {

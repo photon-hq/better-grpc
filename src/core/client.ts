@@ -1,4 +1,11 @@
-import type { AnyBaseSignature, BaseSignature, ExtractFn, ExtractImplFn, ValidReturnType } from "./base";
+import type {
+    AnyBaseSignature,
+    BaseSignature,
+    ExtractFn,
+    ExtractImplFn,
+    RpcMethodDescriptor,
+    ValidReturnType,
+} from "./base";
 import type { AnyContext, Context } from "./context";
 
 type ClientSignature<fn extends (...args: any[]) => any, C extends AnyContext | undefined> = BaseSignature<
@@ -8,7 +15,10 @@ type ClientSignature<fn extends (...args: any[]) => any, C extends AnyContext | 
 >;
 
 export function client<fn extends (...args: any[]) => ValidReturnType<fn>>(): ClientSignature<fn, undefined> {
-    return null as any;
+    return {
+        serviceType: "client",
+        methodType: "unary",
+    } as RpcMethodDescriptor as any;
 }
 
 export type ClientImpls<T> = {
