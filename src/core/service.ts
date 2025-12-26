@@ -1,6 +1,4 @@
-import type { ClientFn, RpcMethodDescriptor, ServerFn } from "./rpc-signatures";
-
-export declare const ServiceNameTag: unique symbol;
+export declare const ServiceNameTag: unique symbol;./base
 
 export interface ServiceInstance<N extends string = string> {
     readonly [ServiceNameTag]: N;

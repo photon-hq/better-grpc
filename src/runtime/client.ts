@@ -23,7 +23,7 @@ export class GrpcClient {
     pendingStreams = new Map<string, (value: Pushable<any>) => void>();
     pendingBidi = new Map<string, (context: Context<any>) => void>(); // bidi that is waiting for context
     pendingBidiAck = new Map<string, () => void>();
-        
+
     constructor(address: string, grpcOptions: ChannelOptions, serviceImpls: ServiceImpl<any, "client">[]) {
         this.clientId = crypto.randomUUID();
         this.address = address;

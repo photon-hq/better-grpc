@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { z } from "zod";
-import { bidi } from "../core/rpc-signatures";
+import { bidi } from "../core/base";
 import { Service } from "../core/service";
 import { createGrpcClient } from "../runtime/grpc-client";
 import { createGrpcServer } from "../runtime/grpc-server";
