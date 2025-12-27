@@ -40,7 +40,7 @@ export type ClientCallable<T, WithListen extends boolean = true> = {
           : never;
 };
 
-type BidiContext<C extends AnyContext | undefined> = C extends undefined ? Context<undefined>: C;
+type BidiContext<C extends AnyContext | undefined> = C extends undefined ? Context<undefined> : C;
 
 type BidiCallableBase<S extends BaseSignature<"bidi", any, any>, C extends AnyContext | undefined> = ExtractFn<S> & {
     context: BidiContext<C>;
