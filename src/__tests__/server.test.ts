@@ -47,7 +47,7 @@ describe("server side test", async () => {
     });
 
     const grpcServer = await createGrpcServer(50002, UnaryServerImpl);
-    await createGrpcClient("0.0.0.0:50002", UnaryClientImpl);
+    const grpcClient = await createGrpcClient("0.0.0.0:50002", UnaryClientImpl);
 
     test("unary without input", async () => {
         expect(await grpcServer.UnaryTestService.clientFn1()).toBe(2);
@@ -85,5 +85,17 @@ describe("server side test", async () => {
         expect(await grpcServer.UnaryTestService.clientFn6(1)).toEqual([1, 2]);
         expect(await grpcServer.UnaryTestService.clientFn6(2)).toEqual([2, 3]);
         expect(await grpcServer.UnaryTestService.clientFn6(3)).toEqual([3, 4]);
+    });
+
+    test("unary with clientId calls specific client", async () => {
+        // Get the default client ID
+        const defaultClientId = (grpcClient as any).clientID as string
+        
+        expect(defaultClientId).toBeDefined()
+
+        // Call using explicit clientId
+        const serviceWithClientId = grpcServer.UnaryTestService(defaultClientId);
+        expect(await serviceWithClientId.clientFn2(10)).toBe(11);
+        expect(await serviceWithClientId.clientFn3(5, 7)).toBe(12);
     });
 });
