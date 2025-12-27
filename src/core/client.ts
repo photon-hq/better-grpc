@@ -41,9 +41,9 @@ export type ClientCallable<T> = {
 type BidiCallable<S extends BaseSignature<"bidi", any, any>, C extends AnyContext | undefined> = ExtractFn<S> & {
     context: Promise<C>;
 } & AsyncGenerator<Parameters<ExtractFn<S>>, void, unknown> & {
-        listen(connection: {
+        listen(handler: (connection: {
             context: C;
             messages: AsyncGenerator<Parameters<ExtractFn<S>>, void, unknown>;
             send: ExtractFn<S>;
-        }): void;
+        }) => void): void;
     };

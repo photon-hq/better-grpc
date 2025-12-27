@@ -97,6 +97,22 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
                             outStream.end();
                         }
                     })();
+                    
+                    grpcServer.bidiConnections.push({
+                        context: grpcServer.getContext(serviceImpl.serviceClass.serviceName, name),
+                        messages: inStream,
+                        send: async (...args: any[]) => {
+                            const ackId = descriptor.config?.ack ? crypto.randomUUID() : undefined;
+
+                            outStream.push(encodeRequestMessage(ackId, args));
+
+                            if (ackId) {
+                                return new Promise((resolve) => {
+                                    grpcServer.pendingBidiAck.set(ackId, resolve as any);
+                                });
+                            }
+                        }
+                    })
 
                     yield* outStream;
                 };

@@ -1,5 +1,5 @@
 import type { GrpcObject } from "@grpc/grpc-js";
-import type { Pushable } from "it-pushable";
+import { type Pushable, pushable } from "it-pushable";
 import { createServer } from "nice-grpc";
 import type { Context } from "../core/context";
 import type { ServiceImpl } from "../core/service";
@@ -22,9 +22,15 @@ export class GrpcServer {
     pendingContext = new Map<string, (value: Context<any>) => void>();
 
     pendingBidiAck = new Map<string, () => void>();
-    
+
     defaultClientID: string | undefined = undefined;
     pendingDefaultClient: ((value: string) => void) | undefined = undefined;
+
+    bidiConnections = pushable<{
+        context: any;
+        messages: any;
+        send: any;
+    }>({ objectMode: true });
 
     constructor(address: string, serviceImpls: ServiceImpl<any, "server">[]) {
         this.address = address;
@@ -93,7 +99,7 @@ export class GrpcServer {
         resolve(value);
         this.pendingRequests.delete(id);
     }
-    
+
     async waitingDefaultClient(): Promise<string> {
         if (this.defaultClientID) {
             return this.defaultClientID;
@@ -115,14 +121,17 @@ export class GrpcServer {
         for (const serviceImpl of this.serviceImpls) {
             const buildServiceCallable = (clientID: string | undefined) => {
                 const callableInstance: Record<string, any> = {};
-                
+
                 for (const [name, descriptor] of Object.entries(serviceImpl.methods())) {
                     switch (`${descriptor.serviceType}:${descriptor.methodType}`) {
                         case "client:unary":
                             (callableInstance as any)[name] = async (...args: any[]) => {
                                 const requestId = crypto.randomUUID();
                                 return new Promise((resolve) => {
-                                    const stream = this.getStream(serviceImpl.serviceClass.serviceName, name.toUpperCase());
+                                    const stream = this.getStream(
+                                        serviceImpl.serviceClass.serviceName,
+                                        name.toUpperCase(),
+                                    );
                                     this.pendingRequests.set(requestId, resolve);
                                     stream.then((s) => s.push(encodeRequestMessage(requestId, args)));
                                 });
@@ -130,41 +139,40 @@ export class GrpcServer {
                             break;
                         case "bidi:bidi": {
                             async function* generator(server: GrpcServer) {
-                                const nonNullClientID = clientID ?? await server.waitingDefaultClient()
-                                
-                                console.log(`${serviceImpl.serviceClass.serviceName}_${nonNullClientID}_IN`)
+                                const nonNullClientID = clientID ?? (await server.waitingDefaultClient());
+
+                                console.log(`${serviceImpl.serviceClass.serviceName}_${nonNullClientID}_IN`);
                                 const inStream = await server.getStream(
                                     `${serviceImpl.serviceClass.serviceName}_${nonNullClientID}_IN`,
                                     name.toUpperCase(),
                                 );
-    
+
                                 yield* inStream;
                             }
-    
+
                             const emitFn = async (...args: any[]): Promise<void> => {
-                                const nonNullClientID = clientID ?? await this.waitingDefaultClient()
-                                
-                                console.log(`${serviceImpl.serviceClass.serviceName}_${nonNullClientID}_OUT`)
+                                const nonNullClientID = clientID ?? (await this.waitingDefaultClient());
+
                                 const outStream = await this.getStream(
                                     `${serviceImpl.serviceClass.serviceName}_${nonNullClientID}_OUT`,
                                     name.toUpperCase(),
                                 );
-    
+
                                 const ackId = descriptor.config?.ack ? crypto.randomUUID() : undefined;
-    
+
                                 outStream.push(encodeRequestMessage(ackId, args));
-    
+
                                 if (ackId) {
                                     return new Promise((resolve) => {
                                         this.pendingBidiAck.set(ackId, resolve);
                                     });
                                 }
                             };
-    
+
                             const context = {
                                 context: this.getContext(serviceImpl.serviceClass.serviceName, name),
                             };
-    
+
                             const hybrid = Object.assign(emitFn, {
                                 [Symbol.asyncIterator]: () => {
                                     const iterator = generator(this);
@@ -175,20 +183,37 @@ export class GrpcServer {
                                     };
                                 },
                             });
-    
+
                             Object.assign(hybrid, context);
-    
+
+                            if (!clientID) {
+                                // bidiFn.listen()
+                                const listen = {
+                                    listen: (
+                                        handler: (connection: { context: any; messages: any; send: any }) => void,
+                                    ) => {
+                                        ;(async () => {
+                                            for await (const connection of this.bidiConnections) {
+                                                handler(connection);
+                                            }
+                                        })();
+                                    },
+                                };
+
+                                Object.assign(hybrid, listen);
+                            }
+
                             (callableInstance as any)[name] = hybrid;
-    
+
                             break;
                         }
                     }
                 }
-                
+
                 return callableInstance;
-            }
-            
-            const serviceCallableInstance = Object.assign(buildServiceCallable, buildServiceCallable(undefined))
+            };
+
+            const serviceCallableInstance = Object.assign(buildServiceCallable, buildServiceCallable(undefined));
 
             Object.defineProperty(this, serviceImpl.serviceClass.serviceName, {
                 value: serviceCallableInstance,
