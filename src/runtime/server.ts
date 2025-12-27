@@ -1,4 +1,5 @@
 import type { GrpcObject } from "@grpc/grpc-js";
+import { Mutex } from "async-mutex";
 import { type Pushable, pushable } from "it-pushable";
 import { createServer } from "nice-grpc";
 import type { Context } from "../core/context";
@@ -26,11 +27,11 @@ export class GrpcServer {
     defaultClientID: string | undefined = undefined;
     pendingDefaultClient: ((value: string) => void) | undefined = undefined;
 
-    bidiConnections = pushable<{
+    bidiConnections: Record<string, Pushable<{
         context: any;
         messages: any;
         send: any;
-    }>({ objectMode: true });
+    }>> = {};
 
     constructor(address: string, serviceImpls: ServiceImpl<any, "server">[]) {
         this.address = address;
@@ -107,6 +108,16 @@ export class GrpcServer {
         return new Promise((resolve) => {
             this.pendingDefaultClient = resolve;
         });
+    }
+
+    defaultClientMutex = new Mutex();
+
+    getBidiConnectionStream(serviceName: string, methodName: string) {
+        const key = `${serviceName}.${methodName.toUpperCase()}`;
+        if (!this.bidiConnections[key]) {
+            this.bidiConnections[key] = pushable({ objectMode: true });
+        }
+        return this.bidiConnections[key];
     }
 
     setDefaultClient(clientID: string) {
@@ -194,7 +205,11 @@ export class GrpcServer {
                                         handler: (connection: { context: any; messages: any; send: any }) => void,
                                     ) => {
                                         (async () => {
-                                            for await (const connection of this.bidiConnections) {
+                                            const stream = this.getBidiConnectionStream(
+                                                serviceImpl.serviceClass.serviceName,
+                                                name,
+                                            );
+                                            for await (const connection of stream) {
                                                 handler(connection);
                                             }
                                         })();

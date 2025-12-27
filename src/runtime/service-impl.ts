@@ -22,7 +22,9 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
                     let result = await impl(...(value ?? []));
 
                     if (typeof result === "function") {
-                        result = await result({ metadata: decodeMetadata(ctx.metadata) });
+                        const metadata = decodeMetadata(ctx.metadata);
+                        const clientID = metadata.BETTER_GRPC_CLIENT_ID as string | undefined;
+                        result = await result({ metadata: metadata, client: { id: clientID } });
                     }
 
                     return encodeResponseMessage(undefined, result);
@@ -34,9 +36,11 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
                     const clientID = metadata.BETTER_GRPC_CLIENT_ID as string;
 
                     // set default client ID if not set
-                    if (!grpcServer.defaultClientID) {
-                        grpcServer.setDefaultClient(clientID);
-                    }
+                    await grpcServer.defaultClientMutex.runExclusive(() => {
+                        if (!grpcServer.defaultClientID) {
+                            grpcServer.setDefaultClient(clientID);
+                        }
+                    });
 
                     const stream = pushable<any>({ objectMode: true });
 
@@ -64,15 +68,17 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
                 break;
             case "bidi:bidi":
                 (grpcImpl as any)[name.toUpperCase()] = async function* (incomingStream: any, ctx: any) {
-                    // bidi must contain metadat
+                    // bidi must contain metadata
 
                     const metadata = decodeMetadata(ctx.metadata);
                     const clientID = metadata.BETTER_GRPC_CLIENT_ID as string;
 
                     // set default client ID if not set
-                    if (!grpcServer.defaultClientID) {
-                        grpcServer.setDefaultClient(clientID);
-                    }
+                    await grpcServer.defaultClientMutex.runExclusive(() => {
+                        if (!grpcServer.defaultClientID) {
+                            grpcServer.setDefaultClient(clientID);
+                        }
+                    });
 
                     grpcServer.setContext(serviceImpl.serviceClass.serviceName, name, {
                         metadata: metadata,
@@ -106,7 +112,7 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
                         }
                     })();
 
-                    grpcServer.bidiConnections.push({
+                    grpcServer.getBidiConnectionStream(serviceImpl.serviceClass.serviceName, name).push({
                         context: grpcServer.getContext(serviceImpl.serviceClass.serviceName, name),
                         messages: inStream,
                         send: async (...args: any[]) => {
