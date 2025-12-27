@@ -126,10 +126,11 @@ export class GrpcServer {
                     switch (`${descriptor.serviceType}:${descriptor.methodType}`) {
                         case "client:unary":
                             (callableInstance as any)[name] = async (...args: any[]) => {
+                                const nonNullClientID = clientID ?? (await this.waitingDefaultClient());
                                 const requestId = crypto.randomUUID();
                                 return new Promise((resolve) => {
                                     const stream = this.getStream(
-                                        serviceImpl.serviceClass.serviceName,
+                                        `${serviceImpl.serviceClass.serviceName}_${nonNullClientID}`,
                                         name.toUpperCase(),
                                     );
                                     this.pendingRequests.set(requestId, resolve);

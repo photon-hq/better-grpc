@@ -79,7 +79,11 @@ export class GrpcClient {
                 switch (`${descriptor.serviceType}:${descriptor.methodType}`) {
                     case "client:unary": {
                         const incomingStream = pushable<any>({ objectMode: true });
-                        const incomingMessages = client[name.toUpperCase()](incomingStream);
+                        const incomingMessages = client[name.toUpperCase()](incomingStream, {
+                            metadata: encodeMetadata({
+                                "BETTER_GRPC_CLIENT_ID": this.clientID
+                            })
+                        });
 
                         (async () => {
                             try {

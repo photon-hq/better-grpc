@@ -29,10 +29,18 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
                 };
                 break;
             case "client:unary":
-                (grpcImpl as any)[name.toUpperCase()] = async function* (incomingStream: any) {
+                (grpcImpl as any)[name.toUpperCase()] = async function* (incomingStream: any, ctx: any) {
+                    const metadata = decodeMetadata(ctx.metadata);
+                    const clientID = metadata.BETTER_GRPC_CLIENT_ID as string;
+
+                    // set default client ID if not set
+                    if (!grpcServer.defaultClientID) {
+                        grpcServer.setDefaultClient(clientID);
+                    }
+
                     const stream = pushable<any>({ objectMode: true });
 
-                    grpcServer.setStream(serviceImpl.serviceClass.serviceName, name, stream);
+                    grpcServer.setStream(`${serviceImpl.serviceClass.serviceName}_${clientID}`, name, stream);
 
                     // listening for response
                     (async () => {
@@ -57,15 +65,15 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
             case "bidi:bidi":
                 (grpcImpl as any)[name.toUpperCase()] = async function* (incomingStream: any, ctx: any) {
                     // bidi must contain metadat
-                    
+
                     const metadata = decodeMetadata(ctx.metadata);
-                    const clientID = metadata.BETTER_GRPC_CLIENT_ID as string
-                    
+                    const clientID = metadata.BETTER_GRPC_CLIENT_ID as string;
+
                     // set default client ID if not set
                     if (!grpcServer.defaultClientID) {
                         grpcServer.setDefaultClient(clientID);
                     }
-                    
+
                     grpcServer.setContext(serviceImpl.serviceClass.serviceName, name, {
                         metadata: metadata,
                         client: { id: clientID },
@@ -97,7 +105,7 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
                             outStream.end();
                         }
                     })();
-                    
+
                     grpcServer.bidiConnections.push({
                         context: grpcServer.getContext(serviceImpl.serviceClass.serviceName, name),
                         messages: inStream,
@@ -111,8 +119,8 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
                                     grpcServer.pendingBidiAck.set(ackId, resolve as any);
                                 });
                             }
-                        }
-                    })
+                        },
+                    });
 
                     yield* outStream;
                 };
