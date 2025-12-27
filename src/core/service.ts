@@ -66,8 +66,8 @@ export type ServiceNameOf<T extends ServiceImpl<any, any>> = T extends ServiceIm
     ? InstanceType<ServiceClass>[typeof ServiceNameTag]
     : never;
 
-export type ServiceCallable<T> = T extends ServiceImpl<infer S, infer Mode>
+export type ServiceCallable<T, WithListen extends boolean = true> = T extends ServiceImpl<infer S, infer Mode>
     ? Mode extends "server"
-        ? ClientCallable<InstanceType<S>>
+        ? ClientCallable<InstanceType<S>, WithListen>
         : ServerCallable<InstanceType<S>>
     : never;

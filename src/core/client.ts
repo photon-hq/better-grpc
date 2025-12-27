@@ -28,22 +28,30 @@ export type ClientImpls<T> = {
 };
 
 // call on server
-export type ClientCallable<T> = {
+export type ClientCallable<T, WithListen extends boolean = true> = {
     [K in keyof T as T[K] extends BaseSignature<"client", any, any> | BaseSignature<"bidi", any, any>
         ? K
         : never]: T[K] extends BaseSignature<"client", any, any>
         ? ExtractFn<T[K]>
         : T[K] extends BaseSignature<"bidi", any, infer C>
-          ? BidiCallable<T[K], C>
+          ? WithListen extends true
+              ? BidiCallable<T[K], C>
+              : BidiCallableWithoutListen<T[K], C>
           : never;
 };
 
-type BidiCallable<S extends BaseSignature<"bidi", any, any>, C extends AnyContext | undefined> = ExtractFn<S> & {
-    context: Promise<C>;
-} & AsyncGenerator<Parameters<ExtractFn<S>>, void, unknown> & {
-        listen(handler: (connection: {
-            context: C;
-            messages: AsyncGenerator<Parameters<ExtractFn<S>>, void, unknown>;
-            send: ExtractFn<S>;
-        }) => void): void;
-    };
+type BidiContext<C extends AnyContext | undefined> = C extends undefined ? Promise<Context<undefined>> : Promise<C>;
+
+type BidiCallableBase<S extends BaseSignature<"bidi", any, any>, C extends AnyContext | undefined> = ExtractFn<S> & {
+    context: BidiContext<C>;
+} & AsyncGenerator<Parameters<ExtractFn<S>>, void, unknown>;
+
+type BidiCallable<S extends BaseSignature<"bidi", any, any>, C extends AnyContext | undefined> = BidiCallableBase<S, C> & {
+    listen(handler: (connection: {
+        context: BidiContext<C>;
+        messages: AsyncGenerator<Parameters<ExtractFn<S>>, void, unknown>;
+        send: ExtractFn<S>;
+    }) => void): void;
+};
+
+type BidiCallableWithoutListen<S extends BaseSignature<"bidi", any, any>, C extends AnyContext | undefined> = BidiCallableBase<S, C>;
