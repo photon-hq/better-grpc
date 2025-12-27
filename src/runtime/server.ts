@@ -27,11 +27,14 @@ export class GrpcServer {
     defaultClientID: string | undefined = undefined;
     pendingDefaultClient: ((value: string) => void) | undefined = undefined;
 
-    bidiConnections: Record<string, Pushable<{
-        context: any;
-        messages: any;
-        send: any;
-    }>> = {};
+    bidiConnections: Record<
+        string,
+        Pushable<{
+            context: any;
+            messages: any;
+            send: any;
+        }>
+    > = {};
 
     constructor(address: string, serviceImpls: ServiceImpl<any, "server">[]) {
         this.address = address;
