@@ -1,6 +1,7 @@
 import { createGrpcClient } from "better-grpc";
 import { impl } from "./impl";
 
+// const grpcClient = await createGrpcClient("grpc-test.photon.codes:443", impl);
 const grpcClient = await createGrpcClient("0.0.0.0:50051", impl);
 
 let count = 0;

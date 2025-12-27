@@ -113,7 +113,10 @@ export function createServiceImpl(serviceImpl: ServiceImpl<any, "server">, grpcS
                     })();
 
                     grpcServer.getBidiConnectionStream(serviceImpl.serviceClass.serviceName, name).push({
-                        context: grpcServer.getContext(serviceImpl.serviceClass.serviceName, name),
+                        context: {
+                            metadata: metadata,
+                            client: { id: clientID },
+                        },
                         messages: inStream,
                         send: async (...args: any[]) => {
                             const ackId = descriptor.config?.ack ? crypto.randomUUID() : undefined;

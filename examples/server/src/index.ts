@@ -6,7 +6,7 @@ const grpcServer = await createGrpcServer(50051, impl);
 
 
 grpcServer.ExampleService.bidiFn1.listen(({ context, messages, send }) => {
-    console.log('Starting bidiFn1');
+    console.log(`Starting bidiFn1 ${context.client.id}`);
     let countCheckpoint = 0;
     
     (async () => {
