@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { z } from "zod";
-import { bidi } from "../core/rpc-signatures";
+import { bidi } from "../core";
 import { Service } from "../core/service";
 import { createGrpcClient } from "../runtime/grpc-client";
 import { createGrpcServer } from "../runtime/grpc-server";
@@ -127,5 +127,56 @@ describe("bidi test", async () => {
 
         expect(clientResult[0][0]).toBe("hello");
         expect(order).toEqual(["server_done", "client_received"]);
+    });
+
+    test("listen method receives connections", async () => {
+        const receivedMessages: string[] = [];
+        let listenerContext: any = null;
+
+        grpcServer.BidiTestService.bidiFn1.listen(async ({ context, messages, send }) => {
+            listenerContext = await context;
+            for await (const [msg] of messages) {
+                receivedMessages.push(msg);
+                await send(`echo: ${msg}`);
+            }
+        });
+
+        await grpcClient.BidiTestService.bidiFn1("listen-test");
+
+        // Wait for message to be processed
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        expect(receivedMessages).toContain("listen-test");
+        expect(listenerContext).toBeDefined();
+        expect(listenerContext.client.id).toBeDefined();
+    });
+
+    test("service with clientId does not have listen method", async () => {
+        const serviceWithClientId = grpcServer.BidiTestService("some-client-id");
+
+        // Type check: listen should not exist on clientId-selected service
+        expect((serviceWithClientId.bidiFn1 as any).listen).toBeUndefined();
+
+        // But the direct service should have listen
+        expect(grpcServer.BidiTestService.bidiFn1.listen).toBeDefined();
+    });
+
+    test("service with clientId can still send messages", async () => {
+        // First, establish a connection so we have a valid client ID
+        await grpcClient.BidiTestService.bidiFn1("init");
+
+        // Wait for client to connect
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Get the default client ID that was set
+        const context = await grpcServer.BidiTestService.bidiFn1.context;
+        const clientId = context.client.id;
+
+        // Use the clientId-specific callable to send a message
+        const serviceWithClientId = grpcServer.BidiTestService(clientId);
+        await serviceWithClientId.bidiFn1("targeted-message");
+
+        const result = await getResult(grpcClient.BidiTestService.bidiFn1);
+        expect(result[0][0]).toBe("targeted-message");
     });
 });

@@ -1,6 +1,6 @@
 {
     "name": "better-grpc",
-    "version": "0.2.5",
+    "version": "0.3.0",
     "description": "Simple, typed gRPC for TypeScript",
     "author": "Photon AI",
     "license": "MIT",
@@ -58,6 +58,7 @@
     },
     "dependencies": {
         "@msgpack/msgpack": "^3.1.2",
+        "async-mutex": "^0.5.0",
         "it-pushable": "^3.2.3",
         "nice-grpc": "^2.1.13",
         "zod": "^4.1.12"

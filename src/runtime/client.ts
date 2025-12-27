@@ -10,6 +10,7 @@ import { encodeMetadata } from "./metadata";
 import { buildProtoString } from "./proto-builder";
 
 export class GrpcClient {
+    readonly clientID: string;
     readonly address: string;
     readonly serviceImpls: ServiceImpl<any, "client">[];
     readonly channel: Channel;
@@ -24,6 +25,7 @@ export class GrpcClient {
     pendingBidiAck = new Map<string, () => void>();
 
     constructor(address: string, grpcOptions: ChannelOptions, serviceImpls: ServiceImpl<any, "client">[]) {
+        this.clientID = crypto.randomUUID();
         this.address = address;
         this.serviceImpls = serviceImpls;
         this.proto = loadProtoFromString(buildProtoString(serviceImpls));
@@ -77,7 +79,11 @@ export class GrpcClient {
                 switch (`${descriptor.serviceType}:${descriptor.methodType}`) {
                     case "client:unary": {
                         const incomingStream = pushable<any>({ objectMode: true });
-                        const incomingMessages = client[name.toUpperCase()](incomingStream);
+                        const incomingMessages = client[name.toUpperCase()](incomingStream, {
+                            metadata: encodeMetadata({
+                                BETTER_GRPC_CLIENT_ID: this.clientID,
+                            }),
+                        });
 
                         (async () => {
                             try {
@@ -105,9 +111,12 @@ export class GrpcClient {
                             );
                             this.setStream(`${serviceImpl.serviceClass.serviceName}_IN`, name.toUpperCase(), inStream);
 
-                            const incomingMessages = context
-                                ? client[name.toUpperCase()](outStream, { metadata: encodeMetadata(context.metadata) })
-                                : client[name.toUpperCase()](outStream);
+                            const incomingMessages = client[name.toUpperCase()](outStream, {
+                                metadata: encodeMetadata({
+                                    ...(context?.metadata ?? {}),
+                                    BETTER_GRPC_CLIENT_ID: this.clientID,
+                                }),
+                            });
 
                             (async () => {
                                 try {

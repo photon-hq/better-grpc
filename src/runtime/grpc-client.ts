@@ -13,12 +13,12 @@ export const DEFAULT_OPTIONS: ChannelOptions = {
 export async function createGrpcClient<T extends ServiceImpl<any, "client">[]>(
     address: string,
     ...serviceImpls: T
-): Promise<{ [I in T[number] as ServiceNameOf<I>]: ServiceCallable<I> }>;
+): Promise<{ [I in T[number] as ServiceNameOf<I>]: ServiceCallable<I> } & { clientID: string }>;
 export async function createGrpcClient<T extends ServiceImpl<any, "client">[]>(
     address: string,
     grpcOptions: ChannelOptions,
     ...serviceImpls: T
-): Promise<{ [I in T[number] as ServiceNameOf<I>]: ServiceCallable<I> }>;
+): Promise<{ [I in T[number] as ServiceNameOf<I>]: ServiceCallable<I> } & { clientID: string }>;
 export async function createGrpcClient(
     address: string,
     grpcOptionsOrServiceImpls: ChannelOptions | any,
