@@ -22,6 +22,7 @@ It enables seamless, **bidirectional** communication between a client and a serv
 -   **No `.proto` files:** No need to write `.proto` files or use `protoc` to generate code.
 -   **Simple API:** The API is designed to be simple and intuitive.
 -   **Symmetric Experience:** Call client-side functions from the server with the same syntax as calling server-side functions from the client.
+-   **Multi-Client Support:** Target specific clients from the server using client IDs, enabling per-client communication patterns.
 
 ## Installation
 
@@ -146,7 +147,68 @@ for await (const [message] of server.MyService.chat) {
 }
 ```
 
-### 7. Attach typed metadata
+### 7. Listen for bidi connections on the server
+
+The server can use the `.listen()` API to handle incoming bidi stream connections. This is useful for setting up handlers that respond to each client connection:
+
+```typescript
+server.MyService.chat.listen(({ context, messages, send }) => {
+    console.log(`New client connected ${context.client.id}`);
+    
+    (async () => {
+        for await (const [message] of messages) {
+            console.log('Received:', message);
+            await send(`Echo: ${message}`);
+        }
+    })();
+});
+```
+
+The `listen` handler receives:
+- `context`: A promise that resolves to the connection context (including metadata if defined)
+- `messages`: An async generator yielding incoming messages from the client
+- `send`: A function to send messages back to the client
+
+### 8. Target specific clients
+
+When multiple clients are connected, the server can target a specific client using its client ID. Each client is automatically assigned a unique ID.
+
+**Getting the client ID on the client side:**
+
+```typescript
+const client = await createGrpcClient('localhost:50051', myClientImpl);
+
+// Access the client's unique ID
+console.log(client.clientID); // e.g., 'abc123-def456-...'
+```
+
+**Getting the client ID on the server side:**
+
+In server handlers, the client ID is available via `context.client.id`:
+
+```typescript
+const GreeterServerImpl = GreeterService.Server({
+    greet: (name) => async (context) => {
+        console.log('Client ID:', context.client.id);
+        return `Hello, ${name}!`;
+    },
+});
+```
+
+**Targeting a specific client from the server:**
+
+```typescript
+// Call a specific client by ID
+const clientId = 'some-client-id';
+await server.MyService(clientId).log('Message for specific client');
+
+// For bidi streams, targeting a specific client
+await server.MyService(clientId).chat('hello to specific client');
+```
+
+By default, server calls target the first connected client. When you need to communicate with a specific client (e.g., in a multi-client scenario), use the client ID selector.
+
+### 9. Attach typed metadata
 
 Define metadata requirements with [Zod](https://github.com/colinhacks/zod) schemas, and `better-grpc` will automatically type the context on both sides and marshal the payload into gRPC metadata.
 
@@ -227,7 +289,7 @@ Defines a bidirectional stream signature. `T` should be a function type that ret
 
 - `createGrpcServer(port: number, ...services: ServiceImpl[])`
 
-Creates and starts a gRPC server.
+Creates and starts a gRPC server. Returns service callables that can be invoked directly or with a client ID selector: `server.MyService.method()` or `server.MyService(clientId).method()`.
 
 - `createGrpcClient(address: string, ...services: ServiceImpl[])`
 
@@ -236,6 +298,18 @@ Creates and starts a gRPC client using `DEFAULT_OPTIONS`.
 - `createGrpcClient(address: string, options: ChannelOptions, ...services: ServiceImpl[])`
 
 Creates and starts a gRPC client with custom gRPC channel options. `DEFAULT_OPTIONS` is exported for easy overrides.
+
+### Server-side bidi listen
+
+For bidi streams, the server exposes a `.listen()` method to handle incoming connections:
+
+```typescript
+server.MyService.bidiFn.listen((connection) => {
+    // connection.context: Promise<Context> - resolves to typed context/metadata
+    // connection.messages: AsyncGenerator - incoming messages from client
+    // connection.send: Function - send messages to the client
+});
+```
 
 ## Deployment
 

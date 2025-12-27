@@ -89,9 +89,9 @@ describe("server side test", async () => {
 
     test("unary with clientId calls specific client", async () => {
         // Get the default client ID
-        const defaultClientId = (grpcClient as any).clientID as string
-        
-        expect(defaultClientId).toBeDefined()
+        const defaultClientId = grpcClient.clientID;
+
+        expect(defaultClientId).toBeDefined();
 
         // Call using explicit clientId
         const serviceWithClientId = grpcServer.UnaryTestService(defaultClientId);

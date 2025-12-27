@@ -193,7 +193,7 @@ export class GrpcServer {
                                     listen: (
                                         handler: (connection: { context: any; messages: any; send: any }) => void,
                                     ) => {
-                                        ;(async () => {
+                                        (async () => {
                                             for await (const connection of this.bidiConnections) {
                                                 handler(connection);
                                             }

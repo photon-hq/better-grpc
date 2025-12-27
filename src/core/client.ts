@@ -46,12 +46,20 @@ type BidiCallableBase<S extends BaseSignature<"bidi", any, any>, C extends AnyCo
     context: BidiContext<C>;
 } & AsyncGenerator<Parameters<ExtractFn<S>>, void, unknown>;
 
-type BidiCallable<S extends BaseSignature<"bidi", any, any>, C extends AnyContext | undefined> = BidiCallableBase<S, C> & {
-    listen(handler: (connection: {
-        context: BidiContext<C>;
-        messages: AsyncGenerator<Parameters<ExtractFn<S>>, void, unknown>;
-        send: ExtractFn<S>;
-    }) => void): void;
+type BidiCallable<S extends BaseSignature<"bidi", any, any>, C extends AnyContext | undefined> = BidiCallableBase<
+    S,
+    C
+> & {
+    listen(
+        handler: (connection: {
+            context: BidiContext<C>;
+            messages: AsyncGenerator<Parameters<ExtractFn<S>>, void, unknown>;
+            send: ExtractFn<S>;
+        }) => void,
+    ): void;
 };
 
-type BidiCallableWithoutListen<S extends BaseSignature<"bidi", any, any>, C extends AnyContext | undefined> = BidiCallableBase<S, C>;
+type BidiCallableWithoutListen<
+    S extends BaseSignature<"bidi", any, any>,
+    C extends AnyContext | undefined,
+> = BidiCallableBase<S, C>;

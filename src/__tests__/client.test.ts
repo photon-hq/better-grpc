@@ -16,7 +16,7 @@ describe("client side test", async () => {
             server<(value1: { sub1: number; sub2: number }, value2: { sub1: string; sub2: string }) => number>();
         serverFn6 = server<(value: number) => [number, number]>();
         serverFn7 = server<(id: string) => string>()({ metadata: z.object({ name: z.string() }) });
-        serverFn8 = server<(...words: string[]) => string>()
+        serverFn8 = server<(...words: string[]) => string>();
         serverFn9 = server<(...words: string[]) => string>()({ metadata: z.object({ name: z.string() }) });
     }
 
@@ -46,11 +46,13 @@ describe("client side test", async () => {
             return `Hello ${context.metadata.name} ${id}`;
         },
         serverFn8: async (...words: string[]) => {
-            return words.join(' ');
+            return words.join(" ");
         },
-        serverFn9: (...words: string[]) => async (context) => {
-            return [...words, context.metadata.name].join(' ');
-        },
+        serverFn9:
+            (...words: string[]) =>
+            async (context) => {
+                return [...words, context.metadata.name].join(" ");
+            },
     });
 
     const UnaryClientImpl = UnaryTestService.Client({
@@ -101,18 +103,26 @@ describe("client side test", async () => {
     });
 
     test("unary with metadata", async () => {
-        expect(await grpcClient.UnaryTestService.serverFn7("GRPC").withMeta({ name: "World" })).toBe("Hello World GRPC");
+        expect(await grpcClient.UnaryTestService.serverFn7("GRPC").withMeta({ name: "World" })).toBe(
+            "Hello World GRPC",
+        );
     });
-    
+
     test("unary with multiple string inputs", async () => {
         expect(await grpcClient.UnaryTestService.serverFn8("Hello", "World")).toBe("Hello World");
         expect(await grpcClient.UnaryTestService.serverFn8("Goodbye", "Moon")).toBe("Goodbye Moon");
         expect(await grpcClient.UnaryTestService.serverFn8("How", "Are", "You")).toBe("How Are You");
     });
-    
+
     test("unary with metadata and multiple string inputs", async () => {
-        expect(await grpcClient.UnaryTestService.serverFn9("Hello", "World").withMeta({ name: "World" })).toBe("Hello World World");
-        expect(await grpcClient.UnaryTestService.serverFn9("Goodbye", "Moon").withMeta({ name: "World" })).toBe("Goodbye Moon World");
-        expect(await grpcClient.UnaryTestService.serverFn9("How", "Are", "You").withMeta({ name: "World" })).toBe("How Are You World");
+        expect(await grpcClient.UnaryTestService.serverFn9("Hello", "World").withMeta({ name: "World" })).toBe(
+            "Hello World World",
+        );
+        expect(await grpcClient.UnaryTestService.serverFn9("Goodbye", "Moon").withMeta({ name: "World" })).toBe(
+            "Goodbye Moon World",
+        );
+        expect(await grpcClient.UnaryTestService.serverFn9("How", "Are", "You").withMeta({ name: "World" })).toBe(
+            "How Are You World",
+        );
     });
 });

@@ -8,4 +8,4 @@ export type Context<Meta extends z.ZodObject<any> | undefined> = {
     client: { id: string };
 };
 
-export type AnyContext = Context<any>
+export type AnyContext = Context<any>;

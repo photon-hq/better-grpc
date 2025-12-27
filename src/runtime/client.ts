@@ -81,8 +81,8 @@ export class GrpcClient {
                         const incomingStream = pushable<any>({ objectMode: true });
                         const incomingMessages = client[name.toUpperCase()](incomingStream, {
                             metadata: encodeMetadata({
-                                "BETTER_GRPC_CLIENT_ID": this.clientID
-                            })
+                                BETTER_GRPC_CLIENT_ID: this.clientID,
+                            }),
                         });
 
                         (async () => {
@@ -110,12 +110,12 @@ export class GrpcClient {
                                 outStream,
                             );
                             this.setStream(`${serviceImpl.serviceClass.serviceName}_IN`, name.toUpperCase(), inStream);
-                            
+
                             const incomingMessages = client[name.toUpperCase()](outStream, {
                                 metadata: encodeMetadata({
                                     ...(context?.metadata ?? {}),
-                                    "BETTER_GRPC_CLIENT_ID": this.clientID,
-                                })
+                                    BETTER_GRPC_CLIENT_ID: this.clientID,
+                                }),
                             });
 
                             (async () => {
