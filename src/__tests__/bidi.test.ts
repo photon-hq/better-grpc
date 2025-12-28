@@ -28,7 +28,7 @@ describe("bidi test", async () => {
     async function getResult(generator: AsyncGenerator<any>, firstN: number = 1): Promise<any[]> {
         return new Promise((resolve) => {
             (async () => {
-                const result = [];
+                const result: any[] = [];
                 for await (const value of generator) {
                     result.push(value);
                     if (result.length === firstN) {
