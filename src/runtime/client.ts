@@ -24,15 +24,28 @@ export class GrpcClient {
     pendingBidi = new Map<string, (context: Context<any>) => void>(); // bidi that is waiting for context
     pendingBidiAck = new Map<string, () => void>();
 
-    constructor(address: string, grpcOptions: ChannelOptions, serviceImpls: ServiceImpl<any, "client">[]) {
+    constructor(
+        address: string,
+        credentialsArg: "ssl" | "insecure" | undefined,
+        grpcOptions: ChannelOptions,
+        serviceImpls: ServiceImpl<any, "client">[],
+    ) {
         this.clientID = crypto.randomUUID();
         this.address = address;
         this.serviceImpls = serviceImpls;
         this.proto = loadProtoFromString(buildProtoString(serviceImpls));
 
-        const useSSL = !address.includes("localhost") && !address.includes("127.0.0.1") && !address.includes("0.0.0.0");
-
-        const credentials = useSSL ? ChannelCredentials.createSsl() : ChannelCredentials.createInsecure();
+        let credentials: ChannelCredentials;
+        if (credentialsArg === "ssl") {
+            credentials = ChannelCredentials.createSsl();
+        } else if (credentialsArg === "insecure") {
+            credentials = ChannelCredentials.createInsecure();
+        } else {
+            // Auto-detect based on address
+            const useSSL =
+                !address.includes("localhost") && !address.includes("127.0.0.1") && !address.includes("0.0.0.0");
+            credentials = useSSL ? ChannelCredentials.createSsl() : ChannelCredentials.createInsecure();
+        }
 
         this.channel = createChannel(address, credentials, grpcOptions);
 
