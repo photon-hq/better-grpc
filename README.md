@@ -96,6 +96,16 @@ import { createGrpcClient } from 'better-grpc';
 const client = await createGrpcClient('localhost:50051', myClientImpl);
 ```
 
+By default, SSL/TLS is auto-detected based on the address (SSL for non-localhost addresses). You can explicitly specify credentials:
+
+```typescript
+// Force SSL/TLS connection
+const client = await createGrpcClient('my-server.com:50051', 'ssl', myClientImpl);
+
+// Force insecure (plaintext) connection
+const client = await createGrpcClient('my-server.com:50051', 'insecure', myClientImpl);
+```
+
 You can also override gRPC channel options (defaults are exported as `DEFAULT_OPTIONS`):
 
 ```typescript
@@ -293,11 +303,19 @@ Creates and starts a gRPC server. Returns service callables that can be invoked 
 
 - `createGrpcClient(address: string, ...services: ServiceImpl[])`
 
-Creates and starts a gRPC client using `DEFAULT_OPTIONS`.
+Creates and starts a gRPC client using `DEFAULT_OPTIONS`. SSL/TLS is auto-detected based on the address (SSL for non-localhost addresses).
+
+- `createGrpcClient(address: string, credentials: "ssl" | "insecure", ...services: ServiceImpl[])`
+
+Creates and starts a gRPC client with explicit credential mode. Use `"ssl"` for TLS or `"insecure"` for plaintext connections.
 
 - `createGrpcClient(address: string, options: ChannelOptions, ...services: ServiceImpl[])`
 
 Creates and starts a gRPC client with custom gRPC channel options. `DEFAULT_OPTIONS` is exported for easy overrides.
+
+- `createGrpcClient(address: string, credentials: "ssl" | "insecure", options: ChannelOptions, ...services: ServiceImpl[])`
+
+Creates and starts a gRPC client with both explicit credentials and custom channel options.
 
 ### Server-side bidi listen
 
