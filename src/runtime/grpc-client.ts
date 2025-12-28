@@ -41,8 +41,7 @@ export async function createGrpcClient(
 
     const isCredentials = (val: any): val is "ssl" | "insecure" => val === "ssl" || val === "insecure";
 
-    const isChannelOptions = (val: any): val is ChannelOptions =>
-        val instanceof Object && !isServiceImpl(val);
+    const isChannelOptions = (val: any): val is ChannelOptions => val instanceof Object && !isServiceImpl(val);
 
     let credentials: "ssl" | "insecure" | undefined;
     let grpcOptions: ChannelOptions = DEFAULT_OPTIONS;
