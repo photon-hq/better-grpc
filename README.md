@@ -9,7 +9,7 @@
 </div>
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)](https://www.typescriptlang.org/)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![License](https://img.shields.io/badge/license-Apache_2.0-blue.svg)](./LICENSE)
 [![Discord](https://img.shields.io/badge/Discord-Join-5865F2.svg?logo=discord&logoColor=white)](https://discord.gg/bZd4CMd2H5)
 
 **`better-grpc`** is a TypeScript-first gRPC library that focuses on developer experience and type safety. It eliminates the need for `.proto` files and code generation, allowing you to define your services entirely in TypeScript.
@@ -373,4 +373,4 @@ better-grpc: 126.681042ms
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+This project is licensed under the Apache License 2.0. See the [LICENSE](LICENSE) file for details.
